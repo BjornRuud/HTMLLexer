@@ -84,5 +84,4 @@ final class HTMLLexerTests: XCTestCase {
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
-
 }

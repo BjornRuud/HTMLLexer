@@ -55,6 +55,20 @@ public final class HTMLLexer {
         delegate?.lexer(self, didFindToken: token)
     }
 
+    private func isAsciiAlphanumeric(_ character: Character) -> Bool {
+        let scalars = character.unicodeScalars
+        guard scalars.count == 1 else { return false }
+        let scalar = scalars[scalars.startIndex]
+        return CharacterSet.asciiAlphanumerics.contains(scalar)
+    }
+
+    private func isAsciiWhitespace(_ character: Character) -> Bool {
+        let scalars = character.unicodeScalars
+        guard scalars.count == 1 else { return false }
+        let scalar = scalars[scalars.startIndex]
+        return CharacterSet.asciiWhitespace.contains(scalar)
+    }
+
     private func scanTag() -> Token? {
         guard scanner.scanCharacter() == "<" else { return nil }
         let currentCharacter = scanner.currentCharacter
@@ -96,6 +110,8 @@ public final class HTMLLexer {
                 return nil
             } else if character == ">" {
                 break
+            } else if !isAsciiWhitespace(character) {
+                return nil
             }
         }
         return .beginTag(name: name, attributes: attributes, isSelfClosing: isSelfClosing)
@@ -107,21 +123,13 @@ public final class HTMLLexer {
 
     private func scanTagName() -> String? {
         // https://html.spec.whatwg.org/multipage/syntax.html#syntax-tag-name
-        let asciiAlphanumerics = CharacterSet.asciiAlphanumerics
-        let asciiWhitespace = CharacterSet.asciiWhitespace
         let nameStartIndex = scanner.currentIndex
         while let foundChar = scanner.scanCharacter() {
-            let foundScalars = foundChar.unicodeScalars
-            guard
-                foundScalars.count == 1,
-                asciiAlphanumerics.contains(foundScalars[foundScalars.startIndex])
-            else { return nil }
+            guard isAsciiAlphanumeric(foundChar) else { return nil }
             guard let currentChar = scanner.currentCharacter else { return nil }
-            let currentCharScalars = currentChar.unicodeScalars
-            let currentScalar = currentCharScalars[currentCharScalars.startIndex]
             if currentChar == ">"
                 || currentChar == "/"
-                || asciiWhitespace.contains(currentScalar) {
+                || isAsciiWhitespace(currentChar) {
                 break
             }
         }
