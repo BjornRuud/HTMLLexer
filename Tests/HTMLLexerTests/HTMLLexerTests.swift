@@ -65,4 +65,24 @@ final class HTMLLexerTests: XCTestCase {
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
+
+    func testBeginSelfClosedTag() throws {
+        let lexer = lexer(html: "<div/><div />")
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .beginTag(name: "div", attributes: [:], isSelfClosing: true),
+            .beginTag(name: "div", attributes: [:], isSelfClosing: true),
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
+    func testBeginSelfClosedMalformedTag() throws {
+        let lexer = lexer(html: "<div/ ><div / >")
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .text("<div/ ><div / >")
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
 }

@@ -119,7 +119,9 @@ public final class HTMLLexer {
             guard let currentChar = scanner.currentCharacter else { return nil }
             let currentCharScalars = currentChar.unicodeScalars
             let currentScalar = currentCharScalars[currentCharScalars.startIndex]
-            if currentChar == ">" || asciiWhitespace.contains(currentScalar) {
+            if currentChar == ">"
+                || currentChar == "/"
+                || asciiWhitespace.contains(currentScalar) {
                 break
             }
         }
