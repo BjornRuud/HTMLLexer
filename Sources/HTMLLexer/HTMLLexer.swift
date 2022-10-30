@@ -69,26 +69,44 @@ public final class HTMLLexer {
         return CharacterSet.asciiWhitespace.contains(scalar)
     }
 
+    private var currentCharacter: Character? {
+        return scanner.currentCharacter
+    }
+
+    private func nextCharacter(_ offset: Int = 1) -> Character? {
+        return scanner.peekCharacter(offset)
+    }
+
+    private func scanCharacter() -> Character? {
+        return scanner.scanCharacter()
+    }
+
     private func scanTag() -> Token? {
-        guard scanner.scanCharacter() == "<" else { return nil }
-        let currentCharacter = scanner.currentCharacter
-        if currentCharacter == "!" {
+        guard
+            currentCharacter == "<",
+            let nextCharacter = nextCharacter()
+        else { return nil }
+        if nextCharacter == "!" {
             return scanCommentTag() ?? scanDoctypeTag()
-        } else if currentCharacter == "/" {
+        } else if nextCharacter == "/" {
             return scanEndTag()
         }
         return scanBeginTag()
     }
 
     private func scanCommentTag() -> Token? {
-        guard scanner.scanCharacter() == "!" else { return nil }
-        guard scanner.scanString("--") != nil else { return nil }
+        guard
+            scanCharacter() == "<",
+            scanCharacter() == "!",
+            scanCharacter() == "-",
+            scanCharacter() == "-"
+        else { return nil }
         var token: Token?
         let endMarker = "-->"
         if let comment = scanner.scanUpToString(endMarker), !scanner.isAtEnd {
             token = .commentTag(comment)
             for _ in 0..<endMarker.count {
-                _ = scanner.scanCharacter()
+                _ = scanCharacter()
             }
         }
         return token
@@ -100,33 +118,45 @@ public final class HTMLLexer {
 
     private func scanBeginTag() -> Token? {
         // https://html.spec.whatwg.org/multipage/syntax.html#start-tags
-        guard let name = scanTagName() else { return nil }
-        let attributes = scanTagAttributes()
-        var isSelfClosing = false
-        while let character = scanner.scanCharacter() {
-            if character == "/" {
-                isSelfClosing = true
-                if scanner.scanCharacter() == ">" { break }
-                return nil
-            } else if character == ">" {
-                break
-            } else if !isAsciiWhitespace(character) {
-                return nil
-            }
+        guard
+            scanCharacter() == "<",
+            let name = scanTagName(),
+            let currentChar = currentCharacter
+        else { return nil }
+        let attributes: [String: String]
+        if isAsciiWhitespace(currentChar), let foundAttributes = scanTagAttributes() {
+            attributes = foundAttributes
+        } else {
+            attributes = [:]
         }
+        var isSelfClosing = false
+        var character = scanCharacter()
+        if character == "/" {
+            isSelfClosing = true
+            character = scanCharacter()
+        }
+        guard character == ">" else { return nil }
         return .beginTag(name: name, attributes: attributes, isSelfClosing: isSelfClosing)
     }
 
     private func scanEndTag() -> Token? {
-        return nil
+        // https://html.spec.whatwg.org/multipage/syntax.html#end-tags
+        guard
+            scanCharacter() == "<",
+            scanCharacter() == "/",
+            let name = scanTagName(),
+            skipAsciiWhitespace(),
+            scanCharacter() == ">"
+        else { return nil }
+        return .endTag(name: name)
     }
 
     private func scanTagName() -> String? {
         // https://html.spec.whatwg.org/multipage/syntax.html#syntax-tag-name
         let nameStartIndex = scanner.currentIndex
-        while let foundChar = scanner.scanCharacter() {
+        while let foundChar = scanCharacter() {
             guard isAsciiAlphanumeric(foundChar) else { return nil }
-            guard let currentChar = scanner.currentCharacter else { return nil }
+            guard let currentChar = currentCharacter else { return nil }
             if currentChar == ">"
                 || currentChar == "/"
                 || isAsciiWhitespace(currentChar) {
@@ -137,8 +167,20 @@ public final class HTMLLexer {
         return name.isEmpty ? nil : String(name)
     }
 
-    private func scanTagAttributes() -> [String: String] {
+    private func scanTagAttributes() -> [String: String]? {
+        skipAsciiWhitespace()
         return [:]
+    }
+
+    @discardableResult
+    private func skipAsciiWhitespace() -> Bool {
+        repeat {
+            guard
+                let currentChar = currentCharacter,
+                isAsciiWhitespace(currentChar)
+            else { break }
+        } while scanCharacter() != nil
+        return true
     }
 }
 
