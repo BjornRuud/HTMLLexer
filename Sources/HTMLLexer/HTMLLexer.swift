@@ -123,11 +123,9 @@ public final class HTMLLexer {
             let name = scanTagName(),
             let currentChar = currentCharacter
         else { return nil }
-        let attributes: [String: String]
+        var attributes: [String: String] = [:]
         if isAsciiWhitespace(currentChar), let foundAttributes = scanTagAttributes() {
             attributes = foundAttributes
-        } else {
-            attributes = [:]
         }
         var isSelfClosing = false
         var character = scanCharacter()
