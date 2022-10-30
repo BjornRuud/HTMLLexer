@@ -166,6 +166,7 @@ public final class HTMLLexer {
     }
 
     private func scanTagAttributes() -> [String: String]? {
+        // https://html.spec.whatwg.org/multipage/syntax.html#attributes-2
         skipAsciiWhitespace()
         return [:]
     }
@@ -180,33 +181,6 @@ public final class HTMLLexer {
         } while scanCharacter() != nil
         return true
     }
-}
-
-extension CharacterSet {
-    static var asciiAlphanumerics: CharacterSet = {
-        // An ASCII digit is a code point in the range U+0030 (0) to U+0039 (9), inclusive.
-        // An ASCII upper alpha is a code point in the range U+0041 (A) to U+005A (Z), inclusive.
-        // An ASCII lower alpha is a code point in the range U+0061 (a) to U+007A (z), inclusive.
-        var charSet = CharacterSet()
-        let digitRange = Unicode.Scalar(48)...Unicode.Scalar(57)
-        charSet.insert(charactersIn: digitRange)
-        let upperAlphaRange = Unicode.Scalar(65)...Unicode.Scalar(90)
-        charSet.insert(charactersIn: upperAlphaRange)
-        let lowerAlphaRange = Unicode.Scalar(97)...Unicode.Scalar(122)
-        charSet.insert(charactersIn: lowerAlphaRange)
-        return charSet
-    }()
-
-    static var asciiWhitespace: CharacterSet = {
-        // ASCII whitespace is U+0009 TAB, U+000A LF, U+000C FF, U+000D CR, or U+0020 SPACE.
-        var charSet = CharacterSet()
-        charSet.insert(Unicode.Scalar(9))
-        charSet.insert(Unicode.Scalar(10))
-        charSet.insert(Unicode.Scalar(12))
-        charSet.insert(Unicode.Scalar(13))
-        charSet.insert(Unicode.Scalar(32))
-        return charSet
-    }()
 }
 
 extension Scanner {
