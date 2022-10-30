@@ -46,4 +46,23 @@ final class HTMLLexerTests: XCTestCase {
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
+
+    func testBeginTag() throws {
+        let lexer = lexer(html: "<b><b >")
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .beginTag(name: "b", attributes: [:], isSelfClosing: false),
+            .beginTag(name: "b", attributes: [:], isSelfClosing: false),
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
+    func testBeginMalformedTag() throws {
+        let lexer = lexer(html: "< b><b🎃 >")
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .text("< b><b🎃 >")
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
 }
