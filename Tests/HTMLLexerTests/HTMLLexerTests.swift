@@ -27,4 +27,23 @@ final class HTMLLexerTests: XCTestCase {
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
+
+    func testCommentNoEnd() throws {
+        let lexer = lexer(html: "Asdf <!-- Foo")
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .text("Asdf <!-- Foo")
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
+    func testCommentDoubleEnd() throws {
+        let lexer = lexer(html: "<!-- Foo -->-->")
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .commentTag(" Foo "),
+            .text("-->")
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
 }
