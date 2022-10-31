@@ -105,4 +105,68 @@ final class HTMLLexerTests: XCTestCase {
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
+
+    func testTagAttributeSingle() throws {
+        let html = "<div custom><div  custom/><div custom ><div custom />"
+        let lexer = lexer(html: html)
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
+    func testTagAttributeSingleEqual() throws {
+        let html = "<div custom=><div  custom=/><div custom= ><div custom= />"
+        let lexer = lexer(html: html)
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
+    func testTagAttributeAmpersandQuotedValue() throws {
+        let html = #"<div foo="bar"><div  foo="bar"/><div foo="bar" ><div foo="bar" />"#
+        let lexer = lexer(html: html)
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
+    func testTagAttributeApostropheQuotedValue() throws {
+        let html = #"<div foo='bar'><div  foo='bar'/><div foo='bar' ><div foo='bar' />"#
+        let lexer = lexer(html: html)
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
+    func testTagAttributeUnquotedValue() throws {
+        let html = #"<div foo=bar><div  foo=bar /><div foo=bar bar=foo >"#
+        let lexer = lexer(html: html)
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .beginTag(name: "div", attributes: ["foo": "bar", "bar": "foo"], isSelfClosing: false),
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
 }

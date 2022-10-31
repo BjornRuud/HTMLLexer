@@ -1,6 +1,15 @@
 import Foundation
 
 extension CharacterSet {
+    func contains(_ character: Character) -> Bool {
+        for scalar in character.unicodeScalars {
+            if !self.contains(scalar) { return false }
+        }
+        return true
+    }
+}
+
+extension CharacterSet {
     static var asciiControlCharacters: CharacterSet = {
         // A control is a C0 control or a code point in the range U+007F DELETE to
         // U+009F APPLICATION PROGRAM COMMAND, inclusive.
@@ -68,6 +77,28 @@ extension CharacterSet {
         charSet.insert(Unicode.Scalar(0x2F))
         charSet.insert(Unicode.Scalar(0x3D))
         charSet.formUnion(htmlNoncharacter)
+        charSet.invert()
+        return charSet
+    }()
+
+    static var htmlEndOfTag: CharacterSet = {
+        return CharacterSet(charactersIn: "/>")
+    }()
+
+    static var htmlNonQuotedAttributeValue: CharacterSet = {
+        // [...] in addition to the requirements given above for attribute values, must not
+        // contain any literal ASCII whitespace, any U+0022 QUOTATION MARK characters ("),
+        // U+0027 APOSTROPHE characters ('), U+003D EQUALS SIGN characters (=),
+        // U+003C LESS-THAN SIGN characters (<), U+003E GREATER-THAN SIGN characters (>),
+        // or U+0060 GRAVE ACCENT characters (`), and must not be the empty string.
+        var charSet = CharacterSet()
+        charSet.formUnion(asciiWhitespace)
+        charSet.insert(Unicode.Scalar(0x22))
+        charSet.insert(Unicode.Scalar(0x27))
+        charSet.insert(Unicode.Scalar(0x3C))
+        charSet.insert(Unicode.Scalar(0x3D))
+        charSet.insert(Unicode.Scalar(0x3E))
+        charSet.insert(Unicode.Scalar(0x60))
         charSet.invert()
         return charSet
     }()

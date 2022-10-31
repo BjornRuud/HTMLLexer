@@ -56,17 +56,15 @@ public final class HTMLLexer {
     }
 
     private func isAsciiAlphanumeric(_ character: Character) -> Bool {
-        let scalars = character.unicodeScalars
-        guard scalars.count == 1 else { return false }
-        let scalar = scalars[scalars.startIndex]
-        return CharacterSet.asciiAlphanumerics.contains(scalar)
+        return CharacterSet.asciiAlphanumerics.contains(character)
     }
 
     private func isAsciiWhitespace(_ character: Character) -> Bool {
-        let scalars = character.unicodeScalars
-        guard scalars.count == 1 else { return false }
-        let scalar = scalars[scalars.startIndex]
-        return CharacterSet.asciiWhitespace.contains(scalar)
+        return CharacterSet.asciiWhitespace.contains(character)
+    }
+
+    private func isEndOfTag(_ character: Character) -> Bool {
+        return CharacterSet.htmlEndOfTag.contains(character)
     }
 
     private var currentCharacter: Character? {
@@ -167,8 +165,92 @@ public final class HTMLLexer {
 
     private func scanTagAttributes() -> [String: String]? {
         // https://html.spec.whatwg.org/multipage/syntax.html#attributes-2
+        var attributes: [String: String] = [:]
         skipAsciiWhitespace()
-        return [:]
+        while let nextChar = currentCharacter, !isEndOfTag(nextChar) {
+            guard let (name, value) = scanTagAttribute() else {
+                skipAsciiWhitespace()
+                continue
+            }
+            attributes[name] = value
+            skipAsciiWhitespace()
+        }
+        return attributes
+    }
+
+    private func scanTagAttribute() -> (String, String)? {
+        // Attributes have several variants:
+        // name
+        // name \s* =
+        // name \s* = \s* value
+        // name \s* = \s* 'value'
+        // name \s* = \s* "value"
+        guard
+            let name = scanTagAttributeName(),
+            skipAsciiWhitespace(),
+            let nextChar = currentCharacter
+        else { return nil }
+        if isEndOfTag(nextChar) || nextChar != "=" {
+            return (name, "")
+        }
+        guard
+            scanCharacter() == "=",
+            skipAsciiWhitespace(),
+            let nextChar = currentCharacter
+        else { return nil }
+        if isEndOfTag(nextChar) {
+            return (name, "")
+        }
+        guard let value = scanTagAttributeValue() else { return nil }
+        return (name, value)
+    }
+
+    private func scanTagAttributeName() -> String? {
+        // https://html.spec.whatwg.org/multipage/syntax.html#syntax-attribute-name
+        let nameStartIndex = scanner.currentIndex
+        while true {
+            guard
+                let character = scanCharacter(),
+                CharacterSet.htmlAttributeName.contains(character),
+                let nextChar = currentCharacter
+            else { return nil }
+            if nextChar == "=" || isAsciiWhitespace(nextChar) || isEndOfTag(nextChar) {
+                break
+            }
+        }
+        let name = scanner.string[nameStartIndex..<scanner.currentIndex]
+        return String(name)
+    }
+
+    private func scanTagAttributeValue() -> String? {
+        guard let nextChar = currentCharacter else { return nil }
+        if nextChar == "\"" || nextChar == "'" {
+            return scanTagAttributeQuotedValue()
+        }
+        return scanTagAttributeUnquotedValue()
+    }
+
+    private func scanTagAttributeQuotedValue() -> String? {
+        guard
+            let quote = scanCharacter(),
+            quote == "\"" || quote == "'"
+        else { return nil }
+        guard
+            let value = scanner.scanUpToString(String(quote)),
+            scanCharacter() == quote
+        else { return nil }
+        return value
+    }
+
+    private func scanTagAttributeUnquotedValue() -> String? {
+        let valueStartIndex = scanner.currentIndex
+        while true {
+            guard let nextChar = currentCharacter else { return nil }
+            if !CharacterSet.htmlNonQuotedAttributeValue.contains(nextChar) { break }
+            guard scanCharacter() != nil else { return nil }
+        }
+        let value = scanner.string[valueStartIndex..<scanner.currentIndex]
+        return String(value)
     }
 
     @discardableResult
