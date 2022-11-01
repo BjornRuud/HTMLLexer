@@ -79,6 +79,20 @@ public final class HTMLLexer {
         return scanner.scanCharacter()
     }
 
+    private func scanCharacter(_ character: Character) -> Bool {
+        guard scanner.currentCharacter == character else { return false }
+        scanner.currentIndex = scanner.string.index(after: scanner.currentIndex)
+        return true
+    }
+
+    private func scanString(_ string: String) -> Bool {
+        return scanner.scanString(string) != nil
+    }
+
+    private func scanUpToString(_ string: String) -> String? {
+        return scanner.scanUpToString(string)
+    }
+
     private func scanTag() -> Token? {
         guard
             currentCharacter == "<",
@@ -93,21 +107,13 @@ public final class HTMLLexer {
     }
 
     private func scanCommentTag() -> Token? {
-        guard
-            scanCharacter() == "<",
-            scanCharacter() == "!",
-            scanCharacter() == "-",
-            scanCharacter() == "-"
-        else { return nil }
-        var token: Token?
         let endMarker = "-->"
-        if let comment = scanner.scanUpToString(endMarker), !scanner.isAtEnd {
-            token = .commentTag(comment)
-            for _ in 0..<endMarker.count {
-                _ = scanCharacter()
-            }
-        }
-        return token
+        guard
+            scanString("<!--"),
+            let comment = scanUpToString(endMarker),
+            scanString(endMarker)
+        else { return nil }
+        return .commentTag(comment)
     }
 
     private func scanDoctypeTag() -> Token? {
@@ -267,7 +273,7 @@ public final class HTMLLexer {
 
 extension Scanner {
     var currentCharacter: Character? {
-        guard !isAtEnd else { return nil }
+        if isAtEnd { return nil }
         return string[currentIndex]
     }
 
