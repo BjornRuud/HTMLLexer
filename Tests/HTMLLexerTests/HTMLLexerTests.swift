@@ -19,6 +19,16 @@ final class HTMLLexerTests: XCTestCase {
 
     private var lexerDelegate = TokenCollector()
 
+    func testNoTag() throws {
+        let html = "<< > < <"
+        let lexer = lexer(html: html)
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .text(html)
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
     func testCommentTag() throws {
         let lexer = lexer(html: "<!-- Foo -->")
         lexer.read()

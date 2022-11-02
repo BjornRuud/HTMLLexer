@@ -27,18 +27,17 @@ public final class HTMLLexer {
         var accumulatedText = ""
         var potentialTagIndex = scanner.currentIndex
         while !scanner.isAtEnd {
-            let foundText = scanner.scanUpToString("<")
-            if let foundText = foundText {
+            if let foundText = scanUpToString("<") {
                 accumulatedText.append(foundText)
             }
             if scanner.isAtEnd { break }
-            potentialTagIndex = scanner.currentIndex
+            potentialTagIndex = currentIndex
             if let token = scanTag() {
                 emitText(&accumulatedText)
                 emitToken(token)
             } else {
                 // Not a tag, append text scanned while searching
-                let foundText = scanner.string[potentialTagIndex..<scanner.currentIndex]
+                let foundText = scanner.string[potentialTagIndex..<currentIndex]
                 accumulatedText.append(String(foundText))
             }
         }
@@ -71,8 +70,26 @@ public final class HTMLLexer {
         return scanner.currentCharacter
     }
 
+    private var currentIndex: String.Index {
+        return scanner.currentIndex
+    }
+
     private func nextCharacter(_ offset: Int = 1) -> Character? {
         return scanner.peekCharacter(offset)
+    }
+
+    private func peekCharacter(_ offset: Int = 0) -> Character? {
+        return scanner.peekCharacter(offset)
+    }
+
+    private func peekCharacter(_ character: Character, offset: Int = 0) -> Bool {
+        if scanner.isAtEnd { return false }
+        var index = scanner.currentIndex
+        for _ in 0..<offset {
+            index = scanner.string.index(after: index)
+            if index == scanner.string.endIndex { return false }
+        }
+        return character == scanner.string[index]
     }
 
     private func scanCharacter() -> Character? {
