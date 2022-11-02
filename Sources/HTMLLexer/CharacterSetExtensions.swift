@@ -81,10 +81,6 @@ extension CharacterSet {
         return charSet
     }()
 
-    static var htmlEndOfTag: CharacterSet = {
-        return CharacterSet(charactersIn: "/>")
-    }()
-
     static var htmlNonQuotedAttributeValue: CharacterSet = {
         // [...] in addition to the requirements given above for attribute values, must not
         // contain any literal ASCII whitespace, any U+0022 QUOTATION MARK characters ("),

@@ -179,4 +179,21 @@ final class HTMLLexerTests: XCTestCase {
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
+
+    func testTagAttributeMix() throws {
+        let html = #"<div a b=foo c d="foo" e f='foo'>"#
+        let lexer = lexer(html: html)
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .beginTag(name: "div", attributes: [
+                "a": "",
+                "b": "foo",
+                "c": "",
+                "d": "foo",
+                "e": "",
+                "f": "foo"
+            ], isSelfClosing: false),
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
 }
