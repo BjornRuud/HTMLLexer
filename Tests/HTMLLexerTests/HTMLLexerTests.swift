@@ -196,4 +196,26 @@ final class HTMLLexerTests: XCTestCase {
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
+
+    func testDoctype() throws {
+        let html = #"<!DOCTYPE html><!doctype HTML><!dOcTyPe HtMl>"#
+        let lexer = lexer(html: html)
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .doctypeTag(type: "html", legacy: nil),
+            .doctypeTag(type: "HTML", legacy: nil),
+            .doctypeTag(type: "HtMl", legacy: nil)
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
+    func testDoctypeLegacy() throws {
+        let html = #"<!DOCTYPE html SYSTEM "about:legacy-compat">"#
+        let lexer = lexer(html: html)
+        lexer.read()
+        let reference: [HTMLLexer.Token] = [
+            .doctypeTag(type: "html", legacy: #"SYSTEM "about:legacy-compat""#)
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
 }
