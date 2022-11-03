@@ -10,7 +10,7 @@ public protocol HTMLLexerDelegate: AnyObject {
 /// ```
 /// [
 ///     .text("A "),
-///     .beginTag(name: "b", attributes: [:], isSelfClosing: false),
+///     .startTag(name: "b", attributes: [:], isSelfClosing: false),
 ///     .text("bold"),
 ///     .endTag(name: "b"),
 ///     .text(" move")
@@ -18,7 +18,7 @@ public protocol HTMLLexerDelegate: AnyObject {
 /// ```
 public final class HTMLLexer {
     public enum Token: Equatable {
-        case beginTag(name: String, attributes: [String: String], isSelfClosing: Bool)
+        case startTag(name: String, attributes: [String: String], isSelfClosing: Bool)
         case endTag(name: String)
         case text(String)
         case commentTag(String)
@@ -219,7 +219,7 @@ public final class HTMLLexer {
         if isEndOfTag(currentChar) {
             var isSelfClosing = false
             guard scanEndOfTag(isSelfClosing: &isSelfClosing) else { return nil }
-            return .beginTag(name: name, attributes: [:], isSelfClosing: isSelfClosing)
+            return .startTag(name: name, attributes: [:], isSelfClosing: isSelfClosing)
         }
 
         var attributes: [String: String] = [:]
@@ -228,7 +228,7 @@ public final class HTMLLexer {
         }
         var isSelfClosing = false
         guard scanEndOfTag(isSelfClosing: &isSelfClosing) else { return nil }
-        return .beginTag(name: name, attributes: attributes, isSelfClosing: isSelfClosing)
+        return .startTag(name: name, attributes: attributes, isSelfClosing: isSelfClosing)
     }
 
     private func scanEndTag() -> Token? {

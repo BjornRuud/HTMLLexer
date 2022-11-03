@@ -61,8 +61,8 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer(html: "<b><b >")
         lexer.read()
         let reference: [HTMLLexer.Token] = [
-            .beginTag(name: "b", attributes: [:], isSelfClosing: false),
-            .beginTag(name: "b", attributes: [:], isSelfClosing: false),
+            .startTag(name: "b", attributes: [:], isSelfClosing: false),
+            .startTag(name: "b", attributes: [:], isSelfClosing: false),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -80,8 +80,8 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer(html: "<div/><div />")
         lexer.read()
         let reference: [HTMLLexer.Token] = [
-            .beginTag(name: "div", attributes: [:], isSelfClosing: true),
-            .beginTag(name: "div", attributes: [:], isSelfClosing: true),
+            .startTag(name: "div", attributes: [:], isSelfClosing: true),
+            .startTag(name: "div", attributes: [:], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -121,10 +121,10 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer(html: html)
         lexer.read()
         let reference: [HTMLLexer.Token] = [
-            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
-            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
-            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
-            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -134,10 +134,10 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer(html: html)
         lexer.read()
         let reference: [HTMLLexer.Token] = [
-            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
-            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
-            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
-            .beginTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -147,10 +147,10 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer(html: html)
         lexer.read()
         let reference: [HTMLLexer.Token] = [
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -160,10 +160,10 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer(html: html)
         lexer.read()
         let reference: [HTMLLexer.Token] = [
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -173,9 +173,9 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer(html: html)
         lexer.read()
         let reference: [HTMLLexer.Token] = [
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .beginTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
-            .beginTag(name: "div", attributes: ["foo": "bar", "bar": "foo"], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .startTag(name: "div", attributes: ["foo": "bar", "bar": "foo"], isSelfClosing: false),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -185,7 +185,7 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer(html: html)
         lexer.read()
         let reference: [HTMLLexer.Token] = [
-            .beginTag(name: "div", attributes: [
+            .startTag(name: "div", attributes: [
                 "a": "",
                 "b": "foo",
                 "c": "",
