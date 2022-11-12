@@ -1,4 +1,5 @@
 import Foundation
+import CollectionScanner
 
 public protocol HTMLLexerDelegate: AnyObject {
     func lexer(_ lexer: HTMLLexer, didFindToken token: HTMLLexer.Token)
@@ -27,20 +28,17 @@ public final class HTMLLexer {
 
     public weak var delegate: HTMLLexerDelegate?
 
-    private let scanner: Scanner
+    private var scanner = CollectionScanner("")
 
-    public init(html: String) {
-        let scanner = Scanner(string: html)
-        scanner.charactersToBeSkipped = nil
-        self.scanner = scanner
-    }
+    public init() {}
 
-    public func read() {
+    public func read(html: String) {
+        self.scanner = CollectionScanner(html)
         var accumulatedText = ""
         var potentialTagIndex = scanner.currentIndex
         while !scanner.isAtEnd {
             if let foundText = scanUpToString("<") {
-                accumulatedText.append(foundText)
+                accumulatedText.append(String(foundText))
             }
             if scanner.isAtEnd { break }
             potentialTagIndex = currentIndex
@@ -49,7 +47,7 @@ public final class HTMLLexer {
                 emitToken(token)
             } else {
                 // Not a tag, append text scanned while searching
-                let foundText = scanner.string[potentialTagIndex..<currentIndex]
+                let foundText = scanner.collection[potentialTagIndex..<currentIndex]
                 accumulatedText.append(String(foundText))
             }
         }
@@ -85,8 +83,7 @@ public final class HTMLLexer {
     // MARK: - Scan helper functions
 
     private var currentCharacter: Character? {
-        if scanner.isAtEnd { return nil }
-        return scanner.string[scanner.currentIndex]
+        return scanner.currentElement
     }
 
     private var currentIndex: String.Index {
@@ -94,13 +91,10 @@ public final class HTMLLexer {
     }
 
     private func peekCharacter(offset: Int = 0) -> Character? {
-        if scanner.isAtEnd { return nil }
-        var index = scanner.currentIndex
-        for _ in 0..<offset {
-            index = scanner.string.index(after: index)
-            if index == scanner.string.endIndex { return nil }
+        if offset == 0 {
+            return scanner.peek()
         }
-        return scanner.string[index]
+        return scanner.peek(offset: offset)
     }
 
     private func peekCharacter(_ character: Character, offset: Int = 0) -> Bool {
@@ -109,35 +103,33 @@ public final class HTMLLexer {
     }
 
     private func scanCharacter() -> Character? {
-        return scanner.scanCharacter()
+        return scanner.scan()
     }
 
     private func scanCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanner.scanCharacter() else { return false }
+        guard let foundCharacter = scanner.scan() else { return false }
         return character == foundCharacter
     }
 
     private func scanCaseInsensitiveCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanner.scanCharacter() else { return false }
+        guard let foundCharacter = scanner.scan() else { return false }
         return character.lowercased() == foundCharacter.lowercased()
     }
 
     private func scanString(_ string: String) -> Bool {
-        return scanner.scanString(string) != nil
+        return scanner.scan(collection: string)
     }
 
-    private func scanUpToString(_ string: String) -> String? {
-        return scanner.scanUpToString(string)
+    private func scanUpToString(_ string: String) -> String.SubSequence? {
+        return scanner.scanUpTo(collection: string)
     }
 
     @discardableResult
     private func skipAsciiWhitespace() -> Bool {
-        repeat {
-            guard
-                let currentChar = currentCharacter,
-                isAsciiWhitespace(currentChar)
-            else { break }
-        } while scanCharacter() != nil
+        while let currentChar = scanner.currentElement {
+            guard isAsciiWhitespace(currentChar) else { break }
+            scanner.advanceCurrentIndex()
+        }
         return true
     }
 
@@ -163,7 +155,7 @@ public final class HTMLLexer {
             let comment = scanUpToString(endMarker),
             scanString(endMarker)
         else { return nil }
-        return .commentTag(comment)
+        return .commentTag(String(comment))
     }
 
     private func scanDoctypeTag() -> Token? {
@@ -185,7 +177,7 @@ public final class HTMLLexer {
             scanCaseInsensitiveCharacter("m"),
             scanCaseInsensitiveCharacter("l")
         else { return nil }
-        let type = scanner.string[typeStartIndex..<currentIndex]
+        let type = scanner.collection[typeStartIndex..<currentIndex]
         guard
             skipAsciiWhitespace(),
             let nextChar = peekCharacter()
@@ -196,7 +188,7 @@ public final class HTMLLexer {
         }
         guard let legacyText = scanUpToString(">") else { return nil }
         _ = scanCharacter()
-        return .doctypeTag(type: String(type), legacy: legacyText)
+        return .doctypeTag(type: String(type), legacy: String(legacyText))
     }
 
     private func scanBeginTag() -> Token? {
@@ -265,7 +257,7 @@ public final class HTMLLexer {
                 }
             }
         }
-        let name = scanner.string[nameStartIndex..<scanner.currentIndex]
+        let name = scanner.collection[nameStartIndex..<scanner.currentIndex]
         return name.isEmpty ? nil : String(name)
     }
 
@@ -323,7 +315,7 @@ public final class HTMLLexer {
                 break
             }
         }
-        let name = scanner.string[nameStartIndex..<scanner.currentIndex]
+        let name = scanner.collection[nameStartIndex..<scanner.currentIndex]
         return String(name)
     }
 
@@ -341,10 +333,10 @@ public final class HTMLLexer {
             quote == "\"" || quote == "'"
         else { return nil }
         guard
-            let value = scanner.scanUpToString(String(quote)),
+            let value = scanner.scanUpTo(quote),
             scanCharacter(quote)
         else { return nil }
-        return value
+        return String(value)
     }
 
     private func scanTagAttributeUnquotedValue() -> String? {
@@ -354,7 +346,7 @@ public final class HTMLLexer {
             if !CharacterSet.htmlNonQuotedAttributeValue.contains(nextChar) { break }
             guard scanCharacter() != nil else { return nil }
         }
-        let value = scanner.string[valueStartIndex..<scanner.currentIndex]
+        let value = scanner.collection[valueStartIndex..<scanner.currentIndex]
         return String(value)
     }
 }

@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "collectionscanner",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/BjornRuud/CollectionScanner.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "9b691967e5b9e127dc06e2d08eee94f78d383d19"
+      }
+    }
+  ],
+  "version" : 2
+}
