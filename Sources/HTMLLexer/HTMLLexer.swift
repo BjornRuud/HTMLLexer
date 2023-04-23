@@ -128,7 +128,7 @@ public final class HTMLLexer {
     private func skipAsciiWhitespace() -> Bool {
         while let currentChar = scanner.currentElement {
             guard isAsciiWhitespace(currentChar) else { break }
-            scanner.advanceCurrentIndex()
+            scanner.advanceIndex()
         }
         return true
     }
