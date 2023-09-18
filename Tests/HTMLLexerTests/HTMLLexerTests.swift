@@ -19,6 +19,17 @@ final class HTMLLexerTests: XCTestCase {
 
     private var lexerDelegate = TokenCollector()
 
+    func testByteOrderMark() throws {
+        let html = "\u{FEFF} asdf"
+        let lexer = lexer()
+        lexer.read(html: html)
+        let reference: [HTMLLexer.Token] = [
+            .byteOrderMark,
+            .text(" asdf")
+        ]
+        XCTAssertEqual(lexerDelegate.tokens, reference)
+    }
+
     func testNoTag() throws {
         let html = "<< > < <"
         let lexer = lexer()
@@ -34,7 +45,7 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .commentTag(" Foo ")
+            .comment(" Foo ")
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -54,7 +65,7 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .commentTag(" Foo "),
+            .comment(" Foo "),
             .text("-->")
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
@@ -65,8 +76,8 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .startTag(name: "b", attributes: [:], isSelfClosing: false),
-            .startTag(name: "b", attributes: [:], isSelfClosing: false),
+            .tagStart(name: "b", attributes: [:], isSelfClosing: false),
+            .tagStart(name: "b", attributes: [:], isSelfClosing: false),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -86,8 +97,8 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .startTag(name: "div", attributes: [:], isSelfClosing: true),
-            .startTag(name: "div", attributes: [:], isSelfClosing: true),
+            .tagStart(name: "div", attributes: [:], isSelfClosing: true),
+            .tagStart(name: "div", attributes: [:], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -107,8 +118,8 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .endTag(name: "b"),
-            .endTag(name: "b"),
+            .tagEnd(name: "b"),
+            .tagEnd(name: "b"),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -128,10 +139,10 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
-            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
-            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
-            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .tagStart(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .tagStart(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["custom": ""], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -141,10 +152,10 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
-            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
-            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: false),
-            .startTag(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .tagStart(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["custom": ""], isSelfClosing: true),
+            .tagStart(name: "div", attributes: ["custom": ""], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["custom": ""], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -154,10 +165,10 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -167,10 +178,10 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -180,9 +191,9 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
-            .startTag(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
-            .startTag(name: "div", attributes: ["foo": "bar", "bar": "foo"], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: false),
+            .tagStart(name: "div", attributes: ["foo": "bar"], isSelfClosing: true),
+            .tagStart(name: "div", attributes: ["foo": "bar", "bar": "foo"], isSelfClosing: false),
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -192,7 +203,7 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .startTag(name: "div", attributes: [
+            .tagStart(name: "div", attributes: [
                 "a": "",
                 "b": "foo",
                 "c": "",
@@ -209,9 +220,9 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .doctypeTag(type: "html", legacy: nil),
-            .doctypeTag(type: "HTML", legacy: nil),
-            .doctypeTag(type: "HtMl", legacy: nil)
+            .doctype(type: "html", legacy: nil),
+            .doctype(type: "HTML", legacy: nil),
+            .doctype(type: "HtMl", legacy: nil)
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }
@@ -221,7 +232,7 @@ final class HTMLLexerTests: XCTestCase {
         let lexer = lexer()
         lexer.read(html: html)
         let reference: [HTMLLexer.Token] = [
-            .doctypeTag(type: "html", legacy: #"SYSTEM "about:legacy-compat""#)
+            .doctype(type: "html", legacy: #"SYSTEM "about:legacy-compat""#)
         ]
         XCTAssertEqual(lexerDelegate.tokens, reference)
     }

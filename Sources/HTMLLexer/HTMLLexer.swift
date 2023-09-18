@@ -5,25 +5,29 @@ public protocol HTMLLexerDelegate: AnyObject {
     func lexer(_ lexer: HTMLLexer, didFindToken token: HTMLLexer.Token)
 }
 
-/// A lexer to parse a HTML string into tokens representing the order of the various elements.
+/// A lexer/tokenizer to parse a HTML string into tokens representing the order of the various
+/// elements. It is a non-validating parser. This means it will not check if the HTML structure
+/// is valid, but it _will_ check if the parsed HTML elements are valid according to the HTML
+/// specification. Elements that could not be parsed are output as text.
 ///
-/// Example: The string "A <b>bold</b> move" will output
+/// Example: The string "`A <b>bold</b> move`" will output
 /// ```
 /// [
 ///     .text("A "),
-///     .startTag(name: "b", attributes: [:], isSelfClosing: false),
+///     .tagStart(name: "b", attributes: [:], isSelfClosing: false),
 ///     .text("bold"),
-///     .endTag(name: "b"),
+///     .tagEnd(name: "b"),
 ///     .text(" move")
 /// ]
 /// ```
 public final class HTMLLexer {
     public enum Token: Equatable {
-        case startTag(name: String, attributes: [String: String], isSelfClosing: Bool)
-        case endTag(name: String)
+        case byteOrderMark
+        case comment(String)
+        case doctype(type: String, legacy: String?)
+        case tagStart(name: String, attributes: [String: String], isSelfClosing: Bool)
+        case tagEnd(name: String)
         case text(String)
-        case commentTag(String)
-        case doctypeTag(type: String, legacy: String?)
     }
 
     public weak var delegate: HTMLLexerDelegate?
@@ -36,6 +40,10 @@ public final class HTMLLexer {
         self.scanner = CollectionScanner(html)
         var accumulatedText = ""
         var potentialTagIndex = scanner.currentIndex
+        if scanner.peek() == "\u{FEFF}" {
+            emitToken(.byteOrderMark)
+            scanner.advanceIndex()
+        }
         while !scanner.isAtEnd {
             if let foundText = scanUpToString("<") {
                 accumulatedText.append(String(foundText))
@@ -155,7 +163,7 @@ public final class HTMLLexer {
             let comment = scanUpToString(endMarker),
             scanString(endMarker)
         else { return nil }
-        return .commentTag(String(comment))
+        return .comment(String(comment))
     }
 
     private func scanDoctypeTag() -> Token? {
@@ -184,11 +192,11 @@ public final class HTMLLexer {
         else { return nil }
         if nextChar == ">" {
             _ = scanCharacter()
-            return .doctypeTag(type: String(type), legacy: nil)
+            return .doctype(type: String(type), legacy: nil)
         }
         guard let legacyText = scanUpToString(">") else { return nil }
         _ = scanCharacter()
-        return .doctypeTag(type: String(type), legacy: String(legacyText))
+        return .doctype(type: String(type), legacy: String(legacyText))
     }
 
     private func scanBeginTag() -> Token? {
@@ -213,7 +221,7 @@ public final class HTMLLexer {
         if isEndOfTag(currentChar) {
             var isSelfClosing = false
             guard scanEndOfTag(isSelfClosing: &isSelfClosing) else { return nil }
-            return .startTag(name: name, attributes: [:], isSelfClosing: isSelfClosing)
+            return .tagStart(name: name, attributes: [:], isSelfClosing: isSelfClosing)
         }
 
         var attributes: [String: String] = [:]
@@ -222,7 +230,7 @@ public final class HTMLLexer {
         }
         var isSelfClosing = false
         guard scanEndOfTag(isSelfClosing: &isSelfClosing) else { return nil }
-        return .startTag(name: name, attributes: attributes, isSelfClosing: isSelfClosing)
+        return .tagStart(name: name, attributes: attributes, isSelfClosing: isSelfClosing)
     }
 
     private func scanEndTag() -> Token? {
@@ -233,7 +241,7 @@ public final class HTMLLexer {
             skipAsciiWhitespace(),
             scanCharacter(">")
         else { return nil }
-        return .endTag(name: name)
+        return .tagEnd(name: name)
     }
 
     private func scanTagName(isBeginTag: Bool) -> String? {
