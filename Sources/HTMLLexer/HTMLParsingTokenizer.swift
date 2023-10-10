@@ -2,10 +2,10 @@ import CollectionScanner
 import Foundation
 import Parsing
 
-public enum HTMLToken {
+public enum HTMLToken: Equatable {
     case byteOrderMark
     case comment(Substring)
-    case doctype(type: Substring, legacy: Substring?)
+    case doctype(name: Substring, type: Substring, legacy: Substring?)
     case tagStart(name: Substring, attributes: [Substring: Substring], isSelfClosing: Bool)
     case tagEnd(name: Substring)
     case text(Substring)
@@ -16,6 +16,16 @@ enum HTMLTokenParser {
         Peek { "\u{FEFF}" }
         Prefix(1)
     }.compactMap { _ in HTMLToken.byteOrderMark }
+
+    static let doctype = Backtracking {
+        "<!"
+        Prefix(7).filter { $0.lowercased() == "doctype" }
+        Skip { CharacterSet.asciiWhitespace }
+        Prefix(4).filter { $0.lowercased() == "html" }
+        Skip { CharacterSet.asciiWhitespace }
+        Prefix { $0 != ">" }.map { $0.isEmpty ? nil : $0 }
+        ">"
+    }.compactMap(HTMLToken.doctype(name:type:legacy:))
 }
 
 public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
@@ -41,16 +51,6 @@ public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
 //        return tagAndTextParser()
         return nil
     }
-
-    private var shouldParseBom: Bool = true
-
-//    private func bomParser() -> HTMLLexer.Token? {
-//        guard scanner.peek() == "\u{FEFF}" else {
-//            return nil
-//        }
-//        scanner.advanceIndex()
-//        return .byteOrderMark
-//    }
 
     private var accumulatedText: String = ""
 
@@ -155,16 +155,17 @@ public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
     // MARK: - Scan functions
 
     private func scanTag() -> HTMLLexer.Token? {
-        guard
-            scanCharacter("<"),
-            let nextCharacter = currentCharacter
-        else { return nil }
-        if nextCharacter == "!" {
-            return scanCommentTag() ?? scanDoctypeTag()
-        } else if nextCharacter == "/" {
-            return scanEndTag()
-        }
-        return scanBeginTag()
+//        guard
+//            scanCharacter("<"),
+//            let nextCharacter = currentCharacter
+//        else { return nil }
+//        if nextCharacter == "!" {
+//            return scanCommentTag() ?? scanDoctypeTag()
+//        } else if nextCharacter == "/" {
+//            return scanEndTag()
+//        }
+//        return scanBeginTag()
+        return nil
     }
 
     private func scanCommentTag() -> HTMLLexer.Token? {
@@ -175,39 +176,6 @@ public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
             scanString(endMarker)
         else { return nil }
         return .comment(String(comment))
-    }
-
-    private func scanDoctypeTag() -> HTMLLexer.Token? {
-        guard
-            scanCharacter("!"),
-            scanCaseInsensitiveCharacter("D"),
-            scanCaseInsensitiveCharacter("O"),
-            scanCaseInsensitiveCharacter("C"),
-            scanCaseInsensitiveCharacter("T"),
-            scanCaseInsensitiveCharacter("Y"),
-            scanCaseInsensitiveCharacter("P"),
-            scanCaseInsensitiveCharacter("E"),
-            skipAsciiWhitespace()
-        else { return nil }
-        let typeStartIndex = currentIndex
-        guard
-            scanCaseInsensitiveCharacter("h"),
-            scanCaseInsensitiveCharacter("t"),
-            scanCaseInsensitiveCharacter("m"),
-            scanCaseInsensitiveCharacter("l")
-        else { return nil }
-        let type = scanner.collection[typeStartIndex..<currentIndex]
-        guard
-            skipAsciiWhitespace(),
-            let nextChar = peekCharacter()
-        else { return nil }
-        if nextChar == ">" {
-            _ = scanCharacter()
-            return .doctype(type: String(type), legacy: nil)
-        }
-        guard let legacyText = scanUpToString(">") else { return nil }
-        _ = scanCharacter()
-        return .doctype(type: String(type), legacy: String(legacyText))
     }
 
     private func scanBeginTag() -> HTMLLexer.Token? {
