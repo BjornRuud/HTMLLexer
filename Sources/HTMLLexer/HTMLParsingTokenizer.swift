@@ -17,6 +17,12 @@ enum HTMLTokenParser {
         Prefix(1)
     }.compactMap { _ in HTMLToken.byteOrderMark }
 
+    static let comment = Backtracking {
+        "<!--"
+        PrefixUpTo("-->")
+        "-->"
+    }.compactMap(HTMLToken.comment)
+
     static let doctype = Backtracking {
         "<!"
         Prefix(7).filter { $0.lowercased() == "doctype" }
@@ -169,13 +175,14 @@ public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
     }
 
     private func scanCommentTag() -> HTMLLexer.Token? {
-        let endMarker = "-->"
-        guard
-            scanString("!--"),
-            let comment = scanUpToString(endMarker),
-            scanString(endMarker)
-        else { return nil }
-        return .comment(String(comment))
+//        let endMarker = "-->"
+//        guard
+//            scanString("!--"),
+//            let comment = scanUpToString(endMarker),
+//            scanString(endMarker)
+//        else { return nil }
+//        return .comment(String(comment))
+        return nil
     }
 
     private func scanBeginTag() -> HTMLLexer.Token? {
