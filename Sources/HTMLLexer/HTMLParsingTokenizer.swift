@@ -1,4 +1,3 @@
-import CollectionScanner
 import Foundation
 import Parsing
 
@@ -6,9 +5,21 @@ public enum HTMLToken: Equatable {
     case byteOrderMark
     case comment(Substring)
     case doctype(name: Substring, type: Substring, legacy: Substring?)
-    case tagStart(name: Substring, attributes: [Substring: Substring], isSelfClosing: Bool)
+    case tagStart(name: Substring, attributes: [TagAttribute], isSelfClosing: Bool)
     case tagEnd(name: Substring)
     case text(Substring)
+}
+
+extension HTMLToken {
+    public struct TagAttribute: Equatable {
+        public let name: Substring
+        public let value: Substring?
+
+        public init(name: Substring, value: Substring?) {
+            self.name = name
+            self.value = value
+        }
+    }
 }
 
 enum HTMLTokenParser {
@@ -32,15 +43,63 @@ enum HTMLTokenParser {
         Prefix { $0 != ">" }.map { $0.isEmpty ? nil : $0 }
         ">"
     }.compactMap(HTMLToken.doctype(name:type:legacy:))
+
+
+/*
+ Start tags must have the following format:
+
+ The first character of a start tag must be a U+003C LESS-THAN SIGN character (<).
+
+ The next few characters of a start tag must be the element's tag name.
+
+ If there are to be any attributes in the next step, there must first be one or more ASCII whitespace.
+
+ Then, the start tag may have a number of attributes, the syntax for which is described below. Attributes must be separated from each other by one or more ASCII whitespace.
+
+ After the attributes, or after the tag name if there are no attributes, there may be one or more ASCII whitespace. (Some attributes are required to be followed by a space. See the attributes section below.)
+
+ Then, if the element is one of the void elements, or if the element is a foreign element, then there may be a single U+002F SOLIDUS character (/), which on foreign elements marks the start tag as self-closing. On void elements, it does not mark the start tag as self-closing but instead is unnecessary and has no effect of any kind. For such void elements, it should be used only with caution — especially since, if directly preceded by an unquoted attribute value, it becomes part of the attribute value rather than being discarded by the parser.
+
+ Finally, start tags must be closed by a U+003E GREATER-THAN SIGN character (>).
+ */
+    // https://html.spec.whatwg.org/multipage/syntax.html#start-tags
+    static let startTag = Backtracking {
+        "<"
+        CharacterSet.asciiAlphanumerics
+        Skip { CharacterSet.asciiWhitespace }
+        Always([HTMLToken.TagAttribute]())
+        Optionally { "/" }.map { $0 != nil }
+        ">"
+    }.compactMap(HTMLToken.tagStart(name:attributes:isSelfClosing:))
+
+    static let tagAttribute = Parse(input: Substring.self) {
+        CharacterSet.htmlAttributeName
+        Skip { CharacterSet.asciiWhitespace }
+        Optionally {
+            "="
+            Skip { CharacterSet.asciiWhitespace }
+            OneOf {
+                Parse {
+                    "'"
+                    PrefixUpTo("'")
+                    "'"
+                }
+                Parse {
+                    "\""
+                    PrefixUpTo("\"")
+                    "\""
+                }
+                CharacterSet.htmlNonQuotedAttributeValue
+                    .filter { $0.last != "/" }
+            }
+        }
+    }.compactMap(HTMLToken.TagAttribute.init(name:value:))
 }
 
 public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
     public typealias Element = HTMLLexer.Token
 
-    private let scanner: CollectionScanner<String>
-
     public init(html: String) {
-        self.scanner = CollectionScanner(html)
     }
 
     public mutating func next() -> HTMLLexer.Token? {
@@ -58,289 +117,25 @@ public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
         return nil
     }
 
-    private var accumulatedText: String = ""
-
-    private var queuedToken: HTMLLexer.Token?
-
-    private mutating func tagAndTextParser() -> HTMLLexer.Token? {
-        while !scanner.isAtEnd {
-            if let foundText = scanUpToString("<") {
-                accumulatedText.append(String(foundText))
-            }
-            if scanner.isAtEnd { break }
-            let potentialTagIndex = currentIndex
-            if let token = scanTag() {
-                if accumulatedText.isEmpty {
-                    return token
-                }
-                queuedToken = token
-                return accumulatedTextToken()
-            } else {
-                // Not a tag, append text scanned while searching
-                let foundText = scanner.collection[potentialTagIndex..<currentIndex]
-                accumulatedText.append(String(foundText))
-            }
-        }
-        return accumulatedTextToken()
-    }
-
-    private mutating func accumulatedTextToken() -> HTMLLexer.Token? {
-        if accumulatedText.isEmpty { return nil }
-        let token: HTMLLexer.Token = .text(accumulatedText)
-        accumulatedText.removeAll()
-        return token
-    }
-
-    // MARK: - String and character identification
-
-    private func isAsciiAlphanumeric(_ character: Character) -> Bool {
-        return CharacterSet.asciiAlphanumerics.contains(character)
-    }
-
-    private func isAsciiWhitespace(_ character: Character) -> Bool {
-        return CharacterSet.asciiWhitespace.contains(character)
-    }
-
-    private func isEndOfTag(_ character: Character) -> Bool {
-        return character == ">" || character == "/"
-    }
-
-    // MARK: - Scan helper functions
-
-    private var currentCharacter: Character? {
-        return scanner.currentElement
-    }
-
-    private var currentIndex: String.Index {
-        return scanner.currentIndex
-    }
-
-    private func peekCharacter(offset: Int = 0) -> Character? {
-        if offset == 0 {
-            return scanner.peek()
-        }
-        return scanner.peek(offset: offset)
-    }
-
-    private func peekCharacter(_ character: Character, offset: Int = 0) -> Bool {
-        guard let foundCharacter = peekCharacter(offset: offset) else { return false }
-        return character == foundCharacter
-    }
-
-    private func scanCharacter() -> Character? {
-        return scanner.scan()
-    }
-
-    private func scanCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanner.scan() else { return false }
-        return character == foundCharacter
-    }
-
-    private func scanCaseInsensitiveCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanner.scan() else { return false }
-        return character.lowercased() == foundCharacter.lowercased()
-    }
-
-    private func scanString(_ string: String) -> Bool {
-        return scanner.scan(collection: string)
-    }
-
-    private func scanUpToString(_ string: String) -> String.SubSequence? {
-        return scanner.scanUpTo(collection: string)
-    }
-
-    @discardableResult
-    private func skipAsciiWhitespace() -> Bool {
-        while let currentChar = scanner.currentElement {
-            guard isAsciiWhitespace(currentChar) else { break }
-            scanner.advanceIndex()
-        }
-        return true
-    }
-
-    // MARK: - Scan functions
-
-    private func scanTag() -> HTMLLexer.Token? {
-//        guard
-//            scanCharacter("<"),
-//            let nextCharacter = currentCharacter
-//        else { return nil }
-//        if nextCharacter == "!" {
-//            return scanCommentTag() ?? scanDoctypeTag()
-//        } else if nextCharacter == "/" {
-//            return scanEndTag()
+//    private mutating func tagAndTextParser() -> HTMLLexer.Token? {
+//        while !scanner.isAtEnd {
+//            if let foundText = scanUpToString("<") {
+//                accumulatedText.append(String(foundText))
+//            }
+//            if scanner.isAtEnd { break }
+//            let potentialTagIndex = currentIndex
+//            if let token = scanTag() {
+//                if accumulatedText.isEmpty {
+//                    return token
+//                }
+//                queuedToken = token
+//                return accumulatedTextToken()
+//            } else {
+//                // Not a tag, append text scanned while searching
+//                let foundText = scanner.collection[potentialTagIndex..<currentIndex]
+//                accumulatedText.append(String(foundText))
+//            }
 //        }
-//        return scanBeginTag()
-        return nil
-    }
-
-    private func scanCommentTag() -> HTMLLexer.Token? {
-//        let endMarker = "-->"
-//        guard
-//            scanString("!--"),
-//            let comment = scanUpToString(endMarker),
-//            scanString(endMarker)
-//        else { return nil }
-//        return .comment(String(comment))
-        return nil
-    }
-
-    private func scanBeginTag() -> HTMLLexer.Token? {
-        // https://html.spec.whatwg.org/multipage/syntax.html#start-tags
-
-        func scanEndOfTag(isSelfClosing: inout Bool) -> Bool {
-            var character = scanCharacter()
-            if character == "/" {
-                isSelfClosing = true
-                character = scanCharacter()
-            } else {
-                isSelfClosing = false
-            }
-            return character == ">"
-        }
-
-        guard
-            let name = scanTagName(isBeginTag: true),
-            skipAsciiWhitespace(),
-            let currentChar = currentCharacter
-        else { return nil }
-        if isEndOfTag(currentChar) {
-            var isSelfClosing = false
-            guard scanEndOfTag(isSelfClosing: &isSelfClosing) else { return nil }
-            return .tagStart(name: name, attributes: [:], isSelfClosing: isSelfClosing)
-        }
-
-        var attributes: [String: String] = [:]
-        if let foundAttributes = scanTagAttributes() {
-            attributes = foundAttributes
-        }
-        var isSelfClosing = false
-        guard scanEndOfTag(isSelfClosing: &isSelfClosing) else { return nil }
-        return .tagStart(name: name, attributes: attributes, isSelfClosing: isSelfClosing)
-    }
-
-    private func scanEndTag() -> HTMLLexer.Token? {
-        // https://html.spec.whatwg.org/multipage/syntax.html#end-tags
-        guard
-            scanCharacter("/"),
-            let name = scanTagName(isBeginTag: false),
-            skipAsciiWhitespace(),
-            scanCharacter(">")
-        else { return nil }
-        return .tagEnd(name: name)
-    }
-
-    private func scanTagName(isBeginTag: Bool) -> String? {
-        // https://html.spec.whatwg.org/multipage/syntax.html#syntax-tag-name
-        let nameStartIndex = scanner.currentIndex
-        while let foundChar = scanCharacter() {
-            guard
-                isAsciiAlphanumeric(foundChar),
-                let nextChar = peekCharacter()
-            else { return nil }
-            if isBeginTag {
-                if nextChar == ">"
-                    || nextChar == "/"
-                    || isAsciiWhitespace(nextChar) {
-                    break
-                }
-            } else {
-                if nextChar == ">"
-                    || isAsciiWhitespace(nextChar) {
-                    break
-                }
-            }
-        }
-        let name = scanner.collection[nameStartIndex..<scanner.currentIndex]
-        return name.isEmpty ? nil : String(name)
-    }
-
-    private func scanTagAttributes() -> [String: String]? {
-        // https://html.spec.whatwg.org/multipage/syntax.html#attributes-2
-        var attributes: [String: String] = [:]
-        while let nextChar = peekCharacter(), !isEndOfTag(nextChar) {
-            guard let (name, value) = scanTagAttribute() else {
-                skipAsciiWhitespace()
-                continue
-            }
-            attributes[name] = value
-            skipAsciiWhitespace()
-        }
-        return attributes
-    }
-
-    private func scanTagAttribute() -> (String, String)? {
-        // Attributes have several variants:
-        // name
-        // name \s* =
-        // name \s* = \s* value
-        // name \s* = \s* 'value'
-        // name \s* = \s* "value"
-        guard
-            let name = scanTagAttributeName(),
-            skipAsciiWhitespace(),
-            let nextChar = peekCharacter()
-        else { return nil }
-        if isEndOfTag(nextChar) || nextChar != "=" {
-            return (name, "")
-        }
-        guard
-            scanCharacter("="),
-            skipAsciiWhitespace(),
-            let nextChar = peekCharacter()
-        else { return nil }
-        if isEndOfTag(nextChar) {
-            return (name, "")
-        }
-        guard let value = scanTagAttributeValue() else { return nil }
-        return (name, value)
-    }
-
-    private func scanTagAttributeName() -> String? {
-        // https://html.spec.whatwg.org/multipage/syntax.html#syntax-attribute-name
-        let nameStartIndex = currentIndex
-        while true {
-            guard
-                let character = scanCharacter(),
-                CharacterSet.htmlAttributeName.contains(character),
-                let nextChar = peekCharacter()
-            else { return nil }
-            if nextChar == "=" || isAsciiWhitespace(nextChar) || isEndOfTag(nextChar) {
-                break
-            }
-        }
-        let name = scanner.collection[nameStartIndex..<scanner.currentIndex]
-        return String(name)
-    }
-
-    private func scanTagAttributeValue() -> String? {
-        guard let nextChar = peekCharacter() else { return nil }
-        if nextChar == "\"" || nextChar == "'" {
-            return scanTagAttributeQuotedValue()
-        }
-        return scanTagAttributeUnquotedValue()
-    }
-
-    private func scanTagAttributeQuotedValue() -> String? {
-        guard
-            let quote = scanCharacter(),
-            quote == "\"" || quote == "'"
-        else { return nil }
-        guard
-            let value = scanner.scanUpTo(quote),
-            scanCharacter(quote)
-        else { return nil }
-        return String(value)
-    }
-
-    private func scanTagAttributeUnquotedValue() -> String? {
-        let valueStartIndex = currentIndex
-        while true {
-            guard let nextChar = peekCharacter() else { return nil }
-            if !CharacterSet.htmlNonQuotedAttributeValue.contains(nextChar) { break }
-            guard scanCharacter() != nil else { return nil }
-        }
-        let value = scanner.collection[valueStartIndex..<scanner.currentIndex]
-        return String(value)
-    }
+//        return accumulatedTextToken()
+//    }
 }
