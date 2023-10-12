@@ -72,25 +72,40 @@ enum HTMLTokenParser {
         ">"
     }.compactMap(HTMLToken.tagStart(name:attributes:isSelfClosing:))
 
-    static let tagAttribute = Parse(input: Substring.self) {
+    static let tagAttributeName = Parse(input: Substring.self) {
         CharacterSet.htmlAttributeName
         Skip { CharacterSet.asciiWhitespace }
+    }
+
+    static let tagAttributeValue = Parse(input: Substring.self) {
+        OneOf {
+            Parse {
+                "'"
+                PrefixUpTo("'")
+                "'"
+            }
+            Parse {
+                "\""
+                PrefixUpTo("\"")
+                "\""
+            }
+            // TODO: Support unquoted value
+            //CharacterSet.htmlNonQuotedAttributeValue
+            //    .filter { $0.last != "/" }
+        }
+    }
+
+    static let tagAttribute = Parse(input: Substring.self) {
+        tagAttributeName
         Optionally {
             "="
             Skip { CharacterSet.asciiWhitespace }
-            OneOf {
-                Parse {
-                    "'"
-                    PrefixUpTo("'")
-                    "'"
-                }
-                Parse {
-                    "\""
-                    PrefixUpTo("\"")
-                    "\""
-                }
-                CharacterSet.htmlNonQuotedAttributeValue
-                    .filter { $0.last != "/" }
+        }.flatMap {
+            if $0 == nil {
+                Always<Substring, Substring?>(nil)
+            } else {
+                tagAttributeValue
+                    .map { Optional<Substring>($0) }
             }
         }
     }.compactMap(HTMLToken.TagAttribute.init(name:value:))
