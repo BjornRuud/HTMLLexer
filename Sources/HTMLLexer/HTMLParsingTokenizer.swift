@@ -85,9 +85,8 @@ enum HTMLTokenParser {
             PrefixUpTo("\"")
             "\""
         }
-        // TODO: Support unquoted value
-        //CharacterSet.htmlNonQuotedAttributeValue
-        //    .filter { $0.last != "/" }
+        CharacterSet.htmlNonQuotedAttributeValue
+            .filter { !$0.isEmpty && $0.last != "/" }
     }
 
     static let tagAttribute = Parse(input: Substring.self) {
