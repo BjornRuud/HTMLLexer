@@ -22,6 +22,8 @@ extension HTMLToken {
     }
 }
 
+/// Namespace containing various parsers to map HTML elements to tokens according
+/// to the [HTML specification](https://html.spec.whatwg.org/multipage/syntax.html).
 enum HTMLTokenParser {
     static let byteOrderMark = Parse(input: Substring.self) {
         Peek { "\u{FEFF}" }
@@ -37,47 +39,35 @@ enum HTMLTokenParser {
     static let doctype = Backtracking {
         "<!"
         Prefix(7).filter { $0.lowercased() == "doctype" }
-        Skip { CharacterSet.asciiWhitespace }
+        Skip { oneOrMoreWhitespace }
         Prefix(4).filter { $0.lowercased() == "html" }
         Skip { CharacterSet.asciiWhitespace }
         Prefix { $0 != ">" }.map { $0.isEmpty ? nil : $0 }
         ">"
     }.map(HTMLToken.doctype(name:type:legacy:))
 
-
-/*
- Start tags must have the following format:
-
- The first character of a start tag must be a U+003C LESS-THAN SIGN character (<).
-
- The next few characters of a start tag must be the element's tag name.
-
- If there are to be any attributes in the next step, there must first be one or more ASCII whitespace.
-
- Then, the start tag may have a number of attributes, the syntax for which is described below. Attributes must be separated from each other by one or more ASCII whitespace.
-
- After the attributes, or after the tag name if there are no attributes, there may be one or more ASCII whitespace. (Some attributes are required to be followed by a space. See the attributes section below.)
-
- Then, if the element is one of the void elements, or if the element is a foreign element, then there may be a single U+002F SOLIDUS character (/), which on foreign elements marks the start tag as self-closing. On void elements, it does not mark the start tag as self-closing but instead is unnecessary and has no effect of any kind. For such void elements, it should be used only with caution — especially since, if directly preceded by an unquoted attribute value, it becomes part of the attribute value rather than being discarded by the parser.
-
- Finally, start tags must be closed by a U+003E GREATER-THAN SIGN character (>).
- */
-    // https://html.spec.whatwg.org/multipage/syntax.html#start-tags
     static let startTag = Backtracking {
         "<"
-        CharacterSet.asciiAlphanumerics.filter { !$0.isEmpty }
+        tagName
+        Optionally {
+            Skip { oneOrMoreWhitespace }
+            tagAttributes
+        }.map { $0 ?? [HTMLToken.TagAttribute]() }
         Skip { CharacterSet.asciiWhitespace }
-        tagAttributes
         Optionally { "/" }.map { $0 != nil }
         ">"
     }.map(HTMLToken.tagStart(name:attributes:isSelfClosing:))
 
     static let endTag = Backtracking {
         "</"
-        CharacterSet.asciiAlphanumerics.filter { !$0.isEmpty }
+        tagName
         Skip { CharacterSet.asciiWhitespace }
         ">"
     }.map(HTMLToken.tagEnd(name:))
+
+    static let tagName = Prefix<Substring>(1...) {
+        CharacterSet.asciiAlphanumerics.contains($0)
+    }
 
     static let tagAttributeName = CharacterSet.htmlAttributeName.filter { !$0.isEmpty }
 
@@ -122,6 +112,19 @@ enum HTMLTokenParser {
             End()
         }
     }
+
+    static let tag = OneOf {
+        startTag
+        endTag
+        comment
+        doctype
+    }
+
+    // Helpers
+
+    static let oneOrMoreWhitespace = Prefix<Substring>(1...) {
+        CharacterSet.asciiWhitespace.contains($0)
+    }
 }
 
 public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
@@ -131,39 +134,41 @@ public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
     }
 
     public mutating func next() -> HTMLLexer.Token? {
-//        if let queuedToken {
-//            self.queuedToken = nil
-//            return queuedToken
-//        }
-//        if shouldParseBom {
-//            shouldParseBom = false
-//            if let token = bomParser() {
-//                return token
-//            }
-//        }
-//        return tagAndTextParser()
         return nil
     }
 
-//    private mutating func tagAndTextParser() -> HTMLLexer.Token? {
-//        while !scanner.isAtEnd {
-//            if let foundText = scanUpToString("<") {
-//                accumulatedText.append(String(foundText))
-//            }
-//            if scanner.isAtEnd { break }
-//            let potentialTagIndex = currentIndex
-//            if let token = scanTag() {
-//                if accumulatedText.isEmpty {
-//                    return token
-//                }
-//                queuedToken = token
-//                return accumulatedTextToken()
-//            } else {
-//                // Not a tag, append text scanned while searching
-//                let foundText = scanner.collection[potentialTagIndex..<currentIndex]
-//                accumulatedText.append(String(foundText))
-//            }
-//        }
-//        return accumulatedTextToken()
-//    }
+    public static func parse(_ input: inout Substring) throws -> [HTMLToken] {
+        var tokens = [HTMLToken]()
+        if let bom = try? HTMLTokenParser.byteOrderMark.parse(&input) {
+            tokens.append(bom)
+        }
+        var foundText: Substring = ""
+        while !input.isEmpty {
+            if let foundPrefix = try? PrefixUpTo("<").parse(&input) {
+                foundText += foundPrefix
+            }
+            if let tagToken = try? HTMLTokenParser.tag.parse(&input) {
+                if !foundText.isEmpty {
+                    tokens.append(.text(foundText))
+                }
+                foundText = ""
+                tokens.append(tagToken)
+            } else {
+                // No tag found, skip tag start we tried from
+                foundText += input.prefix(1)
+                input = input.dropFirst()
+            }
+        }
+        if !foundText.isEmpty {
+            tokens.append(.text(foundText))
+        }
+        return tokens
+    }
+}
+
+public struct HTMLLexerParsing {
+    public static func parse(html: String) -> [HTMLToken] {
+        var input = html[...]
+        return (try? HTMLParsingTokenizer.parse(&input)) ?? []
+    }
 }
