@@ -26,13 +26,13 @@ enum HTMLTokenParser {
     static let byteOrderMark = Parse(input: Substring.self) {
         Peek { "\u{FEFF}" }
         Prefix(1)
-    }.compactMap { _ in HTMLToken.byteOrderMark }
+    }.map { _ in HTMLToken.byteOrderMark }
 
     static let comment = Backtracking {
         "<!--"
         PrefixUpTo("-->")
         "-->"
-    }.compactMap(HTMLToken.comment)
+    }.map(HTMLToken.comment)
 
     static let doctype = Backtracking {
         "<!"
@@ -42,7 +42,7 @@ enum HTMLTokenParser {
         Skip { CharacterSet.asciiWhitespace }
         Prefix { $0 != ">" }.map { $0.isEmpty ? nil : $0 }
         ">"
-    }.compactMap(HTMLToken.doctype(name:type:legacy:))
+    }.map(HTMLToken.doctype(name:type:legacy:))
 
 
 /*
@@ -70,34 +70,30 @@ enum HTMLTokenParser {
         Always([HTMLToken.TagAttribute]())
         Optionally { "/" }.map { $0 != nil }
         ">"
-    }.compactMap(HTMLToken.tagStart(name:attributes:isSelfClosing:))
+    }.map(HTMLToken.tagStart(name:attributes:isSelfClosing:))
 
-    static let tagAttributeName = Parse(input: Substring.self) {
-        CharacterSet.htmlAttributeName
-        Skip { CharacterSet.asciiWhitespace }
-    }
+    static let tagAttributeName = CharacterSet.htmlAttributeName.filter { !$0.isEmpty }
 
-    static let tagAttributeValue = Parse(input: Substring.self) {
-        OneOf {
-            Parse {
-                "'"
-                PrefixUpTo("'")
-                "'"
-            }
-            Parse {
-                "\""
-                PrefixUpTo("\"")
-                "\""
-            }
-            // TODO: Support unquoted value
-            //CharacterSet.htmlNonQuotedAttributeValue
-            //    .filter { $0.last != "/" }
+    static let tagAttributeValue = OneOf {
+        Parse {
+            "'"
+            PrefixUpTo("'")
+            "'"
         }
+        Parse {
+            "\""
+            PrefixUpTo("\"")
+            "\""
+        }
+        // TODO: Support unquoted value
+        //CharacterSet.htmlNonQuotedAttributeValue
+        //    .filter { $0.last != "/" }
     }
 
     static let tagAttribute = Parse(input: Substring.self) {
         tagAttributeName
         Optionally {
+            Skip { CharacterSet.asciiWhitespace }
             "="
             Skip { CharacterSet.asciiWhitespace }
         }.flatMap {
@@ -108,7 +104,19 @@ enum HTMLTokenParser {
                     .map { Optional<Substring>($0) }
             }
         }
-    }.compactMap(HTMLToken.TagAttribute.init(name:value:))
+    }.map(HTMLToken.TagAttribute.init(name:value:))
+
+    static let tagAttributes = Many {
+        tagAttribute
+    } separator: {
+        CharacterSet.asciiWhitespace
+    } terminator: {
+        OneOf {
+            Peek { ">" }
+            Peek { "/" }
+            End()
+        }
+    }
 }
 
 public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
