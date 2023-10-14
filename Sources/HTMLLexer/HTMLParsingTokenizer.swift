@@ -65,9 +65,9 @@ enum HTMLTokenParser {
     // https://html.spec.whatwg.org/multipage/syntax.html#start-tags
     static let startTag = Backtracking {
         "<"
-        CharacterSet.asciiAlphanumerics
+        CharacterSet.asciiAlphanumerics.filter { !$0.isEmpty }
         Skip { CharacterSet.asciiWhitespace }
-        Always([HTMLToken.TagAttribute]())
+        tagAttributes
         Optionally { "/" }.map { $0 != nil }
         ">"
     }.map(HTMLToken.tagStart(name:attributes:isSelfClosing:))
@@ -103,12 +103,11 @@ enum HTMLTokenParser {
                     .map { Optional<Substring>($0) }
             }
         }
+        Skip { CharacterSet.asciiWhitespace }
     }.map(HTMLToken.TagAttribute.init(name:value:))
 
     static let tagAttributes = Many {
         tagAttribute
-    } separator: {
-        CharacterSet.asciiWhitespace
     } terminator: {
         OneOf {
             Peek { ">" }
