@@ -72,6 +72,13 @@ enum HTMLTokenParser {
         ">"
     }.map(HTMLToken.tagStart(name:attributes:isSelfClosing:))
 
+    static let endTag = Backtracking {
+        "</"
+        CharacterSet.asciiAlphanumerics.filter { !$0.isEmpty }
+        Skip { CharacterSet.asciiWhitespace }
+        ">"
+    }.map(HTMLToken.tagEnd(name:))
+
     static let tagAttributeName = CharacterSet.htmlAttributeName.filter { !$0.isEmpty }
 
     static let tagAttributeValue = OneOf {
