@@ -4,37 +4,32 @@ import XCTest
 final class HTMLTokenTagAttributeTests: XCTestCase {
     func testTagAttributeSingle() throws {
         let parser = HTMLTokenParser.tagAttribute
-        let text = Substring("custom")
-        let referenceName = Substring("custom")
-        let attribute = try parser.parse(text)
-        XCTAssertEqual(attribute.name, referenceName)
+        var text = Substring("custom")
+        let attribute = try parser.parse(&text)
+        XCTAssertEqual(attribute.name, "custom")
         XCTAssertNil(attribute.value)
     }
 
     func testTagAttributeSingleQuote() throws {
         let parser = HTMLTokenParser.tagAttribute
-        let text = Substring("custom = 'foo'")
-        let referenceName = Substring("custom")
-        let referenceValue = Substring("foo")
-        let attribute = try parser.parse(text)
-        XCTAssertEqual(attribute.name, referenceName)
-        XCTAssertEqual(attribute.value, referenceValue)
+        var text = Substring("custom = 'foo'")
+        let attribute = try parser.parse(&text)
+        XCTAssertEqual(attribute.name, "custom")
+        XCTAssertEqual(attribute.value, "foo")
     }
 
     func testTagAttributeSingleQuoteNoEnd() throws {
         let parser = HTMLTokenParser.tagAttribute
-        let text = Substring("custom = 'foo")
-        XCTAssertThrowsError(try parser.parse(text))
+        var text = Substring("custom = 'foo")
+        XCTAssertThrowsError(try parser.parse(&text))
     }
 
     func testTagAttributeDoubleQuote() throws {
         let parser = HTMLTokenParser.tagAttribute
         var text = Substring("custom = \"foo\"")
-        let referenceName = Substring("custom")
-        let referenceValue = Substring("foo")
         let attribute = try parser.parse(&text)
-        XCTAssertEqual(attribute.name, referenceName)
-        XCTAssertEqual(attribute.value, referenceValue)
+        XCTAssertEqual(attribute.name, "custom")
+        XCTAssertEqual(attribute.value, "foo")
     }
 
     func testTagAttributeDoubleQuoteNoEnd() throws {

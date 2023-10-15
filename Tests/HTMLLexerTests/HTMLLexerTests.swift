@@ -59,6 +59,16 @@ final class HTMLLexerTests: XCTestCase {
         XCTAssertEqual(tokens, reference)
     }
 
+    func testStartTagNoEnd() throws {
+        let html = "<b><b "
+        let tokens = HTMLLexer.parse(html: html)
+        let reference: [HTMLLexer.Token] = [
+            .tagStart(name: "b", attributes: [:], isSelfClosing: false),
+            .text("<b ")
+        ]
+        XCTAssertEqual(tokens, reference)
+    }
+
     func testBeginMalformedTag() throws {
         let html = "< b><b🎃 >"
         let tokens = HTMLLexer.parse(html: html)

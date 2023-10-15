@@ -69,7 +69,6 @@ final class HTMLLexerParsingTests: XCTestCase {
         XCTAssertEqual(tokens, reference)
     }
 
-
     func testBeginMalformedTag() throws {
         let html = "< b><b🎃 >"
         let tokens = HTMLLexerParsing.parse(html: html)
