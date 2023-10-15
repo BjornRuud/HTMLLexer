@@ -25,19 +25,19 @@ extension HTMLToken {
 /// Namespace containing various parsers to map HTML elements to tokens according
 /// to the [HTML specification](https://html.spec.whatwg.org/multipage/syntax.html).
 enum HTMLTokenParser {
-    static let byteOrderMark = Parse(input: Substring.self) {
+    static let byteOrderMark = Parse {
         Peek { "\u{FEFF}" }
         Prefix(1)
     }.map { _ in HTMLToken.byteOrderMark }
 
-    static let comment = Backtracking {
-        "<!--"
+    static let comment = Parse {
+        "!--"
         PrefixUpTo("-->")
         "-->"
     }.map(HTMLToken.comment)
 
-    static let doctype = Backtracking {
-        "<!"
+    static let doctype = Parse {
+        "!"
         Prefix(7).filter { $0.lowercased() == "doctype" }
         Skip { oneOrMoreWhitespace }
         Prefix(4).filter { $0.lowercased() == "html" }
@@ -46,8 +46,7 @@ enum HTMLTokenParser {
         ">"
     }.map(HTMLToken.doctype(name:type:legacy:))
 
-    static let startTag = Backtracking {
-        "<"
+    static let startTag = Parse {
         tagName
         Optionally {
             Skip { oneOrMoreWhitespace }
@@ -58,8 +57,8 @@ enum HTMLTokenParser {
         ">"
     }.map(HTMLToken.tagStart(name:attributes:isSelfClosing:))
 
-    static let endTag = Backtracking {
-        "</"
+    static let endTag = Parse {
+        "/"
         tagName
         Skip { CharacterSet.asciiWhitespace }
         ">"
@@ -86,7 +85,7 @@ enum HTMLTokenParser {
             .filter { !$0.isEmpty && $0.last != "/" }
     }
 
-    static let tagAttribute = Parse(input: Substring.self) {
+    static let tagAttribute = Parse {
         tagAttributeName
         Optionally {
             Skip { CharacterSet.asciiWhitespace }
@@ -113,11 +112,14 @@ enum HTMLTokenParser {
         }
     }
 
-    static let tag = OneOf {
-        startTag
-        endTag
-        comment
-        doctype
+    static let tag = Backtracking {
+        "<"
+        OneOf {
+            startTag
+            endTag
+            comment
+            doctype
+        }
     }
 
     // Helpers
