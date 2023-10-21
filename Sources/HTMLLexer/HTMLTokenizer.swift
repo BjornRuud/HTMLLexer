@@ -30,7 +30,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
         guard scanner.peek() == "\u{FEFF}" else {
             return nil
         }
-        scanner.advanceIndex()
+        scanner.skip()
         return .byteOrderMark
     }
 
@@ -104,33 +104,37 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
     }
 
     private func scanCharacter() -> Character? {
-        return scanner.scan()
+        return scanner.removeFirst()
     }
 
     private func scanCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanner.scan() else { return false }
-        return character == foundCharacter
+        guard scanner.peek() == character else { return false }
+        scanner.skip()
+        return true
     }
 
     private func scanCaseInsensitiveCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanner.scan() else { return false }
-        return character.lowercased() == foundCharacter.lowercased()
+        guard
+            let element = scanner.peek(),
+            element.lowercased() == character.lowercased()
+        else { return false }
+        scanner.skip()
+        return true
     }
 
     private func scanString(_ string: String) -> Bool {
-        return scanner.scan(collection: string)
+        guard scanner.peek(next: string.count) == string else { return false }
+        scanner.skip(string.count)
+        return true
     }
 
     private func scanUpToString(_ string: String) -> String.SubSequence? {
-        return scanner.scanUpTo(collection: string)
+        return scanner.prefix(upToCollection: string)
     }
 
     @discardableResult
     private func skipAsciiWhitespace() -> Bool {
-        while let currentChar = scanner.currentElement {
-            guard isAsciiWhitespace(currentChar) else { break }
-            scanner.advanceIndex()
-        }
+        scanner.skip { isAsciiWhitespace($0) }
         return true
     }
 
@@ -333,8 +337,9 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
             let quote = scanCharacter(),
             quote == "\"" || quote == "'"
         else { return nil }
+        let value = scanner.prefix(upTo: quote)
         guard
-            let value = scanner.scanUpTo(quote),
+            !value.isEmpty,
             scanCharacter(quote)
         else { return nil }
         return String(value)
