@@ -12,7 +12,7 @@ extension CharacterSet {
 extension CharacterSet {
     /// An ASCII control character is a `C0` control or a code point in the range `U+007F DELETE`
     /// to `U+009F APPLICATION PROGRAM COMMAND`, inclusive.
-    static var asciiControlCharacters: CharacterSet = {
+    static let asciiControlCharacters: CharacterSet = {
         var charSet = CharacterSet()
         let range = Unicode.Scalar(0x7F)...Unicode.Scalar(0x9F)
         charSet.insert(charactersIn: range)
@@ -20,7 +20,7 @@ extension CharacterSet {
     }()
 
     /// An ASCII digit is a code point in the range `U+0030 (0)` to `U+0039 (9)`, inclusive.
-    static var asciiDigits: CharacterSet = {
+    static let asciiDigits: CharacterSet = {
         var charSet = CharacterSet()
         let digitRange = Unicode.Scalar(0x30)...Unicode.Scalar(0x39) // 0...9
         charSet.insert(charactersIn: digitRange)
@@ -28,24 +28,24 @@ extension CharacterSet {
     }()
 
     /// An ASCII upper alpha is a code point in the range `U+0041 (A)` to `U+005A (Z)`, inclusive.
-    static var asciiUppercaseAlpha: CharacterSet {
+    static let asciiUppercaseAlpha: CharacterSet = {
         var charSet = CharacterSet()
         let upperAlphaRange = Unicode.Scalar(0x41)...Unicode.Scalar(0x5A) // A...Z
         charSet.insert(charactersIn: upperAlphaRange)
         return charSet
-    }
+    }()
 
     /// An ASCII lower alpha is a code point in the range `U+0061 (a)` to `U+007A (z)`, inclusive.
-    static var asciiLowercaseAlpha: CharacterSet {
+    static let asciiLowercaseAlpha: CharacterSet = {
         var charSet = CharacterSet()
         let lowerAlphaRange = Unicode.Scalar(0x61)...Unicode.Scalar(0x7A) // a...z
         charSet.insert(charactersIn: lowerAlphaRange)
         return charSet
-    }
+    }()
 
     /// The ASCII alphanumerics set is the combined set of digits, lowercase letters and
     /// uppercase letters.
-    static var asciiAlphanumerics: CharacterSet = {
+    static let asciiAlphanumerics: CharacterSet = {
         var charSet = CharacterSet()
         charSet.formUnion(asciiDigits)
         charSet.formUnion(asciiUppercaseAlpha)
@@ -54,7 +54,7 @@ extension CharacterSet {
     }()
 
     /// ASCII whitespace is `U+0009 TAB`, `U+000A LF`, `U+000C FF`, `U+000D CR`, or `U+0020 SPACE`.
-    static var asciiWhitespace: CharacterSet = {
+    static let asciiWhitespace: CharacterSet = {
         var charSet = CharacterSet()
         charSet.insert(Unicode.Scalar(0x09)) // TAB
         charSet.insert(Unicode.Scalar(0x0A)) // LF
@@ -69,7 +69,7 @@ extension CharacterSet {
     /// `U+002F (/)`, `U+003D (=)`, and noncharacters. In the HTML syntax, attribute names, even
     /// those for foreign elements, may be written with any mix of ASCII lower and ASCII
     /// upper alphas.
-    static var htmlAttributeName: CharacterSet = {
+    static let htmlAttributeName: CharacterSet = {
         var charSet = CharacterSet()
         charSet.formUnion(asciiControlCharacters)
         charSet.insert(Unicode.Scalar(0x20)) // SPACE
@@ -89,7 +89,7 @@ extension CharacterSet {
     /// `U+003D EQUALS SIGN` characters (=), `U+003C LESS-THAN SIGN` characters (<),
     /// `U+003E GREATER-THAN SIGN` characters (>), or `U+0060 GRAVE ACCENT` characters (`),
     /// and must not be the empty string.
-    static var htmlNonQuotedAttributeValue: CharacterSet = {
+    static let htmlNonQuotedAttributeValue: CharacterSet = {
         var charSet = CharacterSet()
         charSet.formUnion(asciiWhitespace)
         charSet.insert(Unicode.Scalar(0x22)) // "
@@ -107,7 +107,7 @@ extension CharacterSet {
     /// U+4FFFF, U+5FFFE, U+5FFFF, U+6FFFE, U+6FFFF, U+7FFFE, U+7FFFF, U+8FFFE, U+8FFFF,
     /// U+9FFFE, U+9FFFF, U+AFFFE, U+AFFFF, U+BFFFE, U+BFFFF, U+CFFFE, U+CFFFF, U+DFFFE,
     /// U+DFFFF, U+EFFFE, U+EFFFF, U+FFFFE, U+FFFFF, U+10FFFE, or U+10FFFF.
-    static var htmlNoncharacter: CharacterSet = {
+    static let htmlNoncharacter: CharacterSet = {
         var charSet = CharacterSet()
         if let rangeStart = Unicode.Scalar(0xFDD0), let rangeStop = Unicode.Scalar(0xFDEF) {
             charSet.insert(charactersIn: rangeStart...rangeStop)

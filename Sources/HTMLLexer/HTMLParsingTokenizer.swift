@@ -1,27 +1,6 @@
 import Foundation
 import Parsing
 
-public enum HTMLToken: Equatable {
-    case byteOrderMark
-    case comment(String)
-    case doctype(name: String, type: String, legacy: String?)
-    case tagStart(name: String, attributes: [TagAttribute], isSelfClosing: Bool)
-    case tagEnd(name: String)
-    case text(String)
-}
-
-extension HTMLToken {
-    public struct TagAttribute: Equatable {
-        public let name: String
-        public let value: String?
-
-        public init(name: String, value: String?) {
-            self.name = name
-            self.value = value
-        }
-    }
-}
-
 /// Namespace containing various parsers to map HTML elements to tokens according
 /// to the [HTML specification](https://html.spec.whatwg.org/multipage/syntax.html).
 enum HTMLTokenParser {
@@ -150,17 +129,6 @@ enum HTMLTokenParser {
 
     static let upToNextPotentialTag = Skip {
         PrefixUpTo("<")
-    }
-}
-
-public struct HTMLParsingTokenizer: Sequence, IteratorProtocol {
-    public typealias Element = HTMLLexer.Token
-
-    public init(html: String) {
-    }
-
-    public mutating func next() -> HTMLLexer.Token? {
-        return nil
     }
 }
 

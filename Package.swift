@@ -18,8 +18,14 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/BjornRuud/CollectionScanner.git", branch: "main"),
-        .package(url: "https://github.com/pointfreeco/swift-parsing.git", from: "0.13.0")
+        .package(
+            url: "https://github.com/BjornRuud/CollectionScanner.git",
+            branch: "main"
+        ),
+        .package(
+            url: "https://github.com/pointfreeco/swift-parsing.git",
+            from: "0.13.0"
+        )
     ],
     targets: [
         .target(
