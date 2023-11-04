@@ -96,16 +96,18 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
     }
 
     private func scanCharacter() -> Character? {
-        return scanner.removeFirst()
+        let char = scanner.currentElement
+        scanner.skip(1)
+        return char
     }
 
     private func scanCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanner.removeFirst() else { return false }
+        guard let foundCharacter = scanCharacter() else { return false }
         return character == foundCharacter
     }
 
     private func scanCaseInsensitiveCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanner.removeFirst() else { return false }
+        guard let foundCharacter = scanCharacter() else { return false }
         return character.lowercased() == foundCharacter.lowercased()
     }
 
@@ -113,7 +115,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
         let startIndex = scanner.currentIndex
         for character in string {
             guard
-                let nextChar = scanner.removeFirst(),
+                let nextChar = scanCharacter(),
                 character.lowercased() == nextChar.lowercased()
             else { return nil }
         }
@@ -126,7 +128,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
     private func scanString(_ string: String) -> Bool {
         for character in string {
             guard
-                let foundChar = scanner.removeFirst(),
+                let foundChar = scanCharacter(),
                 foundChar == character
             else { return false }
         }
@@ -134,7 +136,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
     }
 
     private func scanUpToString(_ string: String) -> String.SubSequence? {
-        let prefix = scanner.prefix(upToCollection: string)
+        let prefix = scanner.scan(upToCollection: string)
         return prefix.isEmpty ? nil : prefix
     }
 
@@ -168,7 +170,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
         guard scanner.currentElement == "\u{FEFF}" else {
             return nil
         }
-        scanner.skip()
+        scanner.skip(1)
         return .byteOrderMark
     }
 
@@ -215,10 +217,10 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
             let nextChar = peekCharacter()
         else { return nil }
         if nextChar == ">" {
-            scanner.skip()
+            scanner.skip(1)
             return .doctype(name: String(name), type: String(type), legacy: nil)
         }
-        let legacyText = scanner.prefix(upTo: ">")
+        let legacyText = scanner.scan(upTo: ">")
         guard scanCharacter(">") else { return nil }
         return .doctype(name: String(name), type: String(type), legacy: String(legacyText))
     }
@@ -270,7 +272,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
 
     private func scanTagName() -> String? {
         // https://html.spec.whatwg.org/multipage/syntax.html#syntax-tag-name
-        let name = scanner.prefix(while: { CharacterSet.asciiAlphanumerics.contains($0) })
+        let name = scanner.scan(while: { CharacterSet.asciiAlphanumerics.contains($0) })
         return name.isEmpty ? nil : String(name)
     }
 
@@ -317,7 +319,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
 
     private func scanTagAttributeName() -> String? {
         // https://html.spec.whatwg.org/multipage/syntax.html#syntax-attribute-name
-        let name = scanner.prefix(while: { CharacterSet.htmlAttributeName.contains($0) })
+        let name = scanner.scan(while: { CharacterSet.htmlAttributeName.contains($0) })
         return name.isEmpty ? nil : String(name)
     }
 
@@ -335,14 +337,14 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
             quote == "\"" || quote == "'"
         else { return nil }
         // TODO: Spec compliant value
-        let value = scanner.prefix(upTo: quote)
+        let value = scanner.scan(upTo: quote)
         guard scanCharacter(quote)
         else { return nil }
         return String(value)
     }
 
     private func scanTagAttributeUnquotedValue() -> String? {
-        let value = scanner.prefix(while: { CharacterSet.htmlNonQuotedAttributeValue.contains($0) })
+        let value = scanner.scan(while: { CharacterSet.htmlNonQuotedAttributeValue.contains($0) })
         return value.isEmpty ? nil : String(value)
     }
 }

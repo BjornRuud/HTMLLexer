@@ -17,7 +17,10 @@ let package = Package(
             targets: ["HTMLLexer"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/BjornRuud/CollectionScanner.git", branch: "main")
+        .package(
+            url: "https://github.com/BjornRuud/CollectionScanner.git",
+            branch: "main"
+        )
     ],
     targets: [
         .target(
