@@ -126,10 +126,6 @@ enum HTMLTokenParser {
     static let oneOrMoreWhitespace = Prefix<Substring>(1...) {
         CharacterSet.asciiWhitespace.contains($0)
     }
-
-    static let upToNextPotentialTag = Skip {
-        PrefixUpTo("<")
-    }
 }
 
 public struct HTMLLexerParsing {
@@ -143,9 +139,9 @@ public struct HTMLLexerParsing {
         var textStartIndex = input.startIndex
         var textEndIndex = input.startIndex
         while !input.isEmpty {
-            do {
-                try HTMLTokenParser.upToNextPotentialTag.parse(&input)
-            } catch {
+            if let possibleTagIndex = input.firstIndex(of: "<") {
+                input = input[possibleTagIndex...]
+            } else {
                 textEndIndex = html.endIndex
                 break
             }
