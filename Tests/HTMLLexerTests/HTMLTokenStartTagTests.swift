@@ -4,7 +4,7 @@ import XCTest
 final class HTMLTokenStartTagTests: XCTestCase {
     func testPlain() throws {
         let parser = HTMLTokenParser.startTag
-        var text = Substring("b>")
+        var text = Substring("b>").unicodeScalars
         let token = try parser.parse(&text)
         let reference = HTMLToken.tagStart(name: "b", attributes: [], isSelfClosing: false)
         XCTAssertEqual(token, reference)
@@ -12,7 +12,7 @@ final class HTMLTokenStartTagTests: XCTestCase {
 
     func testPlainWithSpace() throws {
         let parser = HTMLTokenParser.startTag
-        var text = Substring("b >")
+        var text = Substring("b >").unicodeScalars
         let token = try parser.parse(&text)
         let reference = HTMLToken.tagStart(name: "b", attributes: [], isSelfClosing: false)
         XCTAssertEqual(token, reference)
@@ -20,7 +20,7 @@ final class HTMLTokenStartTagTests: XCTestCase {
 
     func testPlainWithSelfClosing() throws {
         let parser = HTMLTokenParser.startTag
-        var text = Substring("b/>")
+        var text = Substring("b/>").unicodeScalars
         let token = try parser.parse(&text)
         let reference = HTMLToken.tagStart(name: "b", attributes: [], isSelfClosing: true)
         XCTAssertEqual(token, reference)
@@ -28,7 +28,7 @@ final class HTMLTokenStartTagTests: XCTestCase {
 
     func testPlainWithSpaceAndSelfClosing() throws {
         let parser = HTMLTokenParser.startTag
-        var text = Substring("b />")
+        var text = Substring("b />").unicodeScalars
         let token = try parser.parse(&text)
         let reference = HTMLToken.tagStart(name: "b", attributes: [], isSelfClosing: true)
         XCTAssertEqual(token, reference)
@@ -36,13 +36,13 @@ final class HTMLTokenStartTagTests: XCTestCase {
 
     func testInvalidName() throws {
         let parser = HTMLTokenParser.startTag
-        var text = Substring("@>")
+        var text = Substring("@>").unicodeScalars
         XCTAssertThrowsError(try parser.parse(&text))
     }
 
     func testAttributesSingle() throws {
         let parser = HTMLTokenParser.startTag
-        var text = Substring("b foo1 = 'bar1'/>")
+        var text = Substring("b foo1 = 'bar1'/>").unicodeScalars
         let token = try parser.parse(&text)
         let attributes: [HTMLToken.TagAttribute] = [
             .init(name: "foo1", value: "bar1")
@@ -53,7 +53,7 @@ final class HTMLTokenStartTagTests: XCTestCase {
 
     func testAttributes() throws {
         let parser = HTMLTokenParser.startTag
-        var text = Substring("b foo1=bar1 foo2='bar2' foo3 = \"bar3\" foo4 />")
+        var text = Substring("b foo1=bar1 foo2='bar2' foo3 = \"bar3\" foo4 />").unicodeScalars
         let token = try parser.parse(&text)
         let attributes: [HTMLToken.TagAttribute] = [
             .init(name: "foo1", value: "bar1"),

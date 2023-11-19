@@ -4,7 +4,7 @@ import XCTest
 final class HTMLTokenEndTagTests: XCTestCase {
     func testPlain() throws {
         let parser = HTMLTokenParser.endTag
-        var text = Substring("/b>")
+        var text = Substring("/b>").unicodeScalars
         let token = try parser.parse(&text)
         let reference = HTMLToken.tagEnd(name: "b")
         XCTAssertEqual(token, reference)
@@ -12,7 +12,7 @@ final class HTMLTokenEndTagTests: XCTestCase {
 
     func testPlainWithSpace() throws {
         let parser = HTMLTokenParser.endTag
-        var text = Substring("/b >")
+        var text = Substring("/b >").unicodeScalars
         let token = try parser.parse(&text)
         let reference = HTMLToken.tagEnd(name: "b")
         XCTAssertEqual(token, reference)
@@ -20,13 +20,13 @@ final class HTMLTokenEndTagTests: XCTestCase {
 
     func testInvalidName() throws {
         let parser = HTMLTokenParser.endTag
-        var text = Substring("/@ >")
+        var text = Substring("/@ >").unicodeScalars
         XCTAssertThrowsError(try parser.parse(&text))
     }
 
     func testInvalidAttribute() throws {
         let parser = HTMLTokenParser.endTag
-        var text = Substring("/b foo='bar'>")
+        var text = Substring("/b foo='bar'>").unicodeScalars
         XCTAssertThrowsError(try parser.parse(&text))
     }
 }
