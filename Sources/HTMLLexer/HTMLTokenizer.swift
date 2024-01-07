@@ -1,61 +1,57 @@
-import CollectionScanner
 import Foundation
 
-public struct HTMLTokenizer: Sequence, IteratorProtocol {
+public final class HTMLTokenizer<Input>: Sequence, IteratorProtocol
+where Input: Collection, Input.Element == Character {
     public typealias Element = HTMLToken
 
-    private let scanner: CollectionScanner<String>
+    private var reader: CharacterReader<Input>
 
-    private var shouldParseBom: Bool = true
+    private var textStart: Input.Index
 
-    private var textStart: String.Index
+    private var textEnd: Input.Index
 
-    private var textEnd: String.Index
+    private var queuedToken: HTMLToken?
 
-    public init(html: String) {
-        self.scanner = CollectionScanner(html)
+    public init(html: Input) {
+        self.reader = CharacterReader(input: html)
         self.textStart = html.startIndex
         self.textEnd = html.startIndex
+
+        self.queuedToken = scanByteOrderMark()
+        if queuedToken != nil {
+            textStart = reader.readIndex
+        }
     }
 
-    public mutating func next() -> HTMLToken? {
+    public func next() -> HTMLToken? {
         if let queuedToken {
             self.queuedToken = nil
             return queuedToken
         }
-        if shouldParseBom {
-            shouldParseBom = false
-            if let token = scanByteOrderMark() {
-                textStart = scanner.currentIndex
-                return token
-            }
-        }
         return tagAndTextParser()
     }
 
-    private var queuedToken: HTMLToken?
-
-    private mutating func tagAndTextParser() -> HTMLToken? {
-        while !scanner.isAtEnd {
-            scanner.skip { $0 != "<" }
-            textEnd = scanner.currentIndex
-            if let token = scanTag() {
-                if textStart == textEnd {
-                    textStart = scanner.currentIndex
-                    return token
+    private func tagAndTextParser() -> HTMLToken? {
+        while !reader.isAtEnd {
+            reader.skip { $0 != "<" }
+            textEnd = reader.readIndex
+            if let tagToken = scanTag() {
+                if let textToken = accumulatedTextToken() {
+                    queuedToken = tagToken
+                    return textToken
                 }
-                queuedToken = token
-                return accumulatedTextToken()
+                textStart = reader.readIndex
+                return tagToken
             }
         }
-        textEnd = scanner.currentIndex
+        textEnd = reader.readIndex
         return accumulatedTextToken()
     }
 
-    private mutating func accumulatedTextToken() -> HTMLToken? {
+    private func accumulatedTextToken() -> HTMLToken? {
         if textStart == textEnd { return nil }
-        let token: HTMLToken = .text(String(scanner.collection[textStart..<textEnd]))
-        textStart = scanner.currentIndex
+        let token: HTMLToken = .text(String(reader.input[textStart..<textEnd]))
+        textStart = reader.readIndex
         return token
     }
 
@@ -73,77 +69,67 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
         return character == ">" || character == "/"
     }
 
-    // MARK: - Scan helper functions
+    // MARK: - Reader helper functions
 
-    private var currentCharacter: Character? {
-        return scanner.currentElement
-    }
-
-    private var currentIndex: String.Index {
-        return scanner.currentIndex
-    }
-
-    private func peekCharacter(offset: Int = 0) -> Character? {
-        if offset == 0 {
-            return scanner.peek()
-        }
-        return scanner.peek(offset: offset)
-    }
-
-    private func peekCharacter(_ character: Character, offset: Int = 0) -> Bool {
-        guard let foundCharacter = peekCharacter(offset: offset) else { return false }
-        return character == foundCharacter
-    }
-
-    private func scanCharacter() -> Character? {
-        let char = scanner.currentElement
-        scanner.skip(1)
-        return char
+    private func peekCharacter(_ character: Character) -> Bool {
+        return character == reader.peek()
     }
 
     private func scanCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanCharacter() else { return false }
-        return character == foundCharacter
+        return character == reader.consume()
     }
 
     private func scanCaseInsensitiveCharacter(_ character: Character) -> Bool {
-        guard let foundCharacter = scanCharacter() else { return false }
-        return character.lowercased() == foundCharacter.lowercased()
+        return character.lowercased() == reader.consume()?.lowercased()
     }
 
-    private func scanCaseInsensitiveString(_ string: String) -> String.SubSequence? {
-        let startIndex = scanner.currentIndex
+    private func scanCaseInsensitiveString(_ string: String) -> Input.SubSequence? {
+        let startIndex = reader.readIndex
         for character in string {
-            guard
-                let nextChar = scanCharacter(),
-                character.lowercased() == nextChar.lowercased()
+            guard character.lowercased() == reader.consume()?.lowercased()
             else { return nil }
         }
-        if scanner.currentIndex == startIndex {
+        if reader.readIndex == startIndex {
             return nil
         }
-        return scanner.collection[startIndex..<scanner.currentIndex]
+        return reader.input[startIndex..<reader.readIndex]
     }
 
     private func scanString(_ string: String) -> Bool {
         for character in string {
-            guard
-                let foundChar = scanCharacter(),
-                foundChar == character
+            guard character == reader.consume()
             else { return false }
         }
         return true
     }
 
-    private func scanUpToString(_ string: String) -> String.SubSequence? {
-        let prefix = scanner.scan(upToCollection: string)
-        return prefix.isEmpty ? nil : prefix
+    private func scanUpToString(
+        _ string: String,
+        consumeMarker: Bool = true
+    ) -> Input.SubSequence? {
+        guard let firstChar = string.first
+        else { return nil }
+        let consumeStart = reader.readIndex
+        readerLoop: while !reader.isAtEnd {
+            reader.skip { $0 != firstChar }
+            let foundStart = reader.readIndex
+            for character in string {
+                if character != reader.consume() {
+                    continue readerLoop
+                }
+            }
+            if !consumeMarker {
+                reader.setReadIndex(foundStart)
+            }
+            return reader.input[consumeStart..<foundStart]
+        }
+        return nil
     }
 
     @discardableResult
-    private func skip(minimum: Int, while predicate: (String.Element) -> Bool) -> Bool {
+    private func skip(minimum: Int, while predicate: (Input.Element) -> Bool) -> Bool {
         var count = 0
-        scanner.skip {
+        reader.skip {
             if predicate($0) {
                 count += 1
                 return true
@@ -160,24 +146,24 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
 
     @discardableResult
     private func skipZeroOrMore(_ predicate: (String.Element) -> Bool) -> Bool {
-        scanner.skip(while: predicate)
+        reader.skip(while: predicate)
         return true
     }
 
     // MARK: - Scan functions
 
     private func scanByteOrderMark() -> HTMLToken? {
-        guard scanner.currentElement == "\u{FEFF}" else {
+        guard reader.peek() == "\u{FEFF}" else {
             return nil
         }
-        scanner.skip(1)
+        reader.skip(1)
         return .byteOrderMark
     }
 
     private func scanTag() -> HTMLToken? {
         guard
             scanCharacter("<"),
-            let nextCharacter = currentCharacter
+            let nextCharacter = reader.peek()
         else { return nil }
         if nextCharacter == "!" {
             return scanMetaTag()
@@ -188,21 +174,19 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
     }
 
     private func scanMetaTag() -> HTMLToken? {
-        let potentialTagIndex = currentIndex
+        let potentialTagIndex = reader.readIndex
         if let commentTag = scanCommentTag() {
             return commentTag
         } else {
-            scanner.setIndex(potentialTagIndex)
+            reader.setReadIndex(potentialTagIndex)
             return scanDoctypeTag()
         }
     }
 
     private func scanCommentTag() -> HTMLToken? {
-        let endMarker = "-->"
         guard
             scanString("!--"),
-            let comment = scanUpToString(endMarker),
-            scanString(endMarker)
+            let comment = scanUpToString("-->")
         else { return nil }
         return .comment(String(comment))
     }
@@ -214,13 +198,13 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
             skipOneOrMore({ isAsciiWhitespace($0) }),
             let type = scanCaseInsensitiveString("html"),
             skipZeroOrMore({ isAsciiWhitespace($0) }),
-            let nextChar = peekCharacter()
+            let nextChar = reader.peek()
         else { return nil }
         if nextChar == ">" {
-            scanner.skip(1)
+            reader.skip(1)
             return .doctype(name: String(name), type: String(type), legacy: nil)
         }
-        let legacyText = scanner.scan(upTo: ">")
+        let legacyText = reader.consume(upTo: ">")
         guard scanCharacter(">") else { return nil }
         return .doctype(name: String(name), type: String(type), legacy: String(legacyText))
     }
@@ -229,10 +213,10 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
         // https://html.spec.whatwg.org/multipage/syntax.html#start-tags
 
         func scanEndOfTag(isSelfClosing: inout Bool) -> Bool {
-            var character = scanCharacter()
+            var character = reader.consume()
             if character == "/" {
                 isSelfClosing = true
-                character = scanCharacter()
+                character = reader.consume()
             } else {
                 isSelfClosing = false
             }
@@ -241,7 +225,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
 
         guard
             let name = scanTagName(),
-            let currentChar = currentCharacter
+            let currentChar = reader.peek()
         else { return nil }
         if isEndOfTag(currentChar) {
             var isSelfClosing = false
@@ -272,14 +256,14 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
 
     private func scanTagName() -> String? {
         // https://html.spec.whatwg.org/multipage/syntax.html#syntax-tag-name
-        let name = scanner.scan(while: { CharacterSet.asciiAlphanumerics.contains($0) })
+        let name = reader.consume(while: { CharacterSet.asciiAlphanumerics.contains($0) })
         return name.isEmpty ? nil : String(name)
     }
 
     private func scanTagAttributes() -> [HTMLToken.TagAttribute] {
         // https://html.spec.whatwg.org/multipage/syntax.html#attributes-2
         var attributes: [HTMLToken.TagAttribute] = []
-        while let nextChar = peekCharacter(), !isEndOfTag(nextChar) {
+        while let nextChar = reader.peek(), !isEndOfTag(nextChar) {
             guard let tagAttribute = scanTagAttribute() else {
                 skipZeroOrMore({ isAsciiWhitespace($0) })
                 continue
@@ -299,7 +283,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
         guard
             let name = scanTagAttributeName(),
             skipZeroOrMore({ isAsciiWhitespace($0) }),
-            let nextChar = peekCharacter()
+            let nextChar = reader.peek()
         else { return nil }
         if isEndOfTag(nextChar) || nextChar != "=" {
             return .init(name: name, value: nil)
@@ -307,7 +291,7 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
         guard
             scanCharacter("="),
             skipZeroOrMore({ isAsciiWhitespace($0) }),
-            let nextChar = peekCharacter()
+            let nextChar = reader.peek()
         else { return nil }
         if isEndOfTag(nextChar) {
             return .init(name: name, value: nil)
@@ -319,12 +303,12 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
 
     private func scanTagAttributeName() -> String? {
         // https://html.spec.whatwg.org/multipage/syntax.html#syntax-attribute-name
-        let name = scanner.scan(while: { CharacterSet.htmlAttributeName.contains($0) })
+        let name = reader.consume(while: { CharacterSet.htmlAttributeName.contains($0) })
         return name.isEmpty ? nil : String(name)
     }
 
     private func scanTagAttributeValue() -> String? {
-        guard let nextChar = scanner.currentElement else { return nil }
+        guard let nextChar = reader.peek() else { return nil }
         if nextChar == "\"" || nextChar == "'" {
             return scanTagAttributeQuotedValue()
         }
@@ -333,18 +317,18 @@ public struct HTMLTokenizer: Sequence, IteratorProtocol {
 
     private func scanTagAttributeQuotedValue() -> String? {
         guard
-            let quote = scanCharacter(),
+            let quote = reader.consume(),
             quote == "\"" || quote == "'"
         else { return nil }
         // TODO: Spec compliant value
-        let value = scanner.scan(upTo: quote)
+        let value = reader.consume(upTo: quote)
         guard scanCharacter(quote)
         else { return nil }
         return String(value)
     }
 
     private func scanTagAttributeUnquotedValue() -> String? {
-        let value = scanner.scan(while: { CharacterSet.htmlNonQuotedAttributeValue.contains($0) })
+        let value = reader.consume(while: { CharacterSet.htmlNonQuotedAttributeValue.contains($0) })
         return value.isEmpty ? nil : String(value)
     }
 }
