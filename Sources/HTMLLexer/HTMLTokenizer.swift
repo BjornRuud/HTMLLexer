@@ -55,32 +55,14 @@ where Input: Collection, Input.Element == Character {
         return token
     }
 
-    // MARK: - String and character identification
-
-    private func isAsciiAlphanumeric(_ character: Character) -> Bool {
-        return CharacterSet.asciiAlphanumerics.contains(character)
-    }
-
-    private func isAsciiWhitespace(_ character: Character) -> Bool {
-        return CharacterSet.asciiWhitespace.contains(character)
-    }
+    // MARK: - Reader helper functions
 
     private func isEndOfTag(_ character: Character) -> Bool {
         return character == ">" || character == "/"
     }
 
-    // MARK: - Reader helper functions
-
-    private func peekCharacter(_ character: Character) -> Bool {
-        return character == reader.peek()
-    }
-
     private func scanCharacter(_ character: Character) -> Bool {
         return character == reader.consume()
-    }
-
-    private func scanCaseInsensitiveCharacter(_ character: Character) -> Bool {
-        return character.lowercased() == reader.consume()?.lowercased()
     }
 
     private func scanCaseInsensitiveString(_ string: String) -> Input.SubSequence? {
@@ -165,10 +147,10 @@ where Input: Collection, Input.Element == Character {
             scanCharacter("<"),
             let nextCharacter = reader.peek()
         else { return nil }
-        if nextCharacter == "!" {
-            return scanMetaTag()
-        } else if nextCharacter == "/" {
+        if nextCharacter == "/" {
             return scanEndTag()
+        } else if nextCharacter == "!" {
+            return scanMetaTag()
         }
         return scanBeginTag()
     }
@@ -195,9 +177,9 @@ where Input: Collection, Input.Element == Character {
         guard
             scanCharacter("!"),
             let name = scanCaseInsensitiveString("DOCTYPE"),
-            skipOneOrMore({ isAsciiWhitespace($0) }),
+            skipOneOrMore({ CharacterSet.asciiWhitespace.contains($0) }),
             let type = scanCaseInsensitiveString("html"),
-            skipZeroOrMore({ isAsciiWhitespace($0) }),
+            skipZeroOrMore({ CharacterSet.asciiWhitespace.contains($0) }),
             let nextChar = reader.peek()
         else { return nil }
         if nextChar == ">" {
@@ -231,8 +213,8 @@ where Input: Collection, Input.Element == Character {
             var isSelfClosing = false
             guard scanEndOfTag(isSelfClosing: &isSelfClosing) else { return nil }
             return .tagStart(name: name, attributes: [], isSelfClosing: isSelfClosing)
-        } else if isAsciiWhitespace(currentChar) {
-            skipOneOrMore({ isAsciiWhitespace($0) })
+        } else if CharacterSet.asciiWhitespace.contains(currentChar) {
+            skipOneOrMore({ CharacterSet.asciiWhitespace.contains($0) })
         } else {
             return nil
         }
@@ -248,7 +230,7 @@ where Input: Collection, Input.Element == Character {
         guard
             scanCharacter("/"),
             let name = scanTagName(),
-            skipZeroOrMore({ isAsciiWhitespace($0) }),
+            skipZeroOrMore({ CharacterSet.asciiWhitespace.contains($0) }),
             scanCharacter(">")
         else { return nil }
         return .tagEnd(name: name)
@@ -265,11 +247,11 @@ where Input: Collection, Input.Element == Character {
         var attributes: [HTMLToken.TagAttribute] = []
         while let nextChar = reader.peek(), !isEndOfTag(nextChar) {
             guard let tagAttribute = scanTagAttribute() else {
-                skipZeroOrMore({ isAsciiWhitespace($0) })
+                skipZeroOrMore({ CharacterSet.asciiWhitespace.contains($0) })
                 continue
             }
             attributes.append(tagAttribute)
-            skipZeroOrMore({ isAsciiWhitespace($0) })
+            skipZeroOrMore({ CharacterSet.asciiWhitespace.contains($0) })
         }
         return attributes
     }
@@ -282,7 +264,7 @@ where Input: Collection, Input.Element == Character {
         // name \s* = \s* "value"
         guard
             let name = scanTagAttributeName(),
-            skipZeroOrMore({ isAsciiWhitespace($0) }),
+            skipZeroOrMore({ CharacterSet.asciiWhitespace.contains($0) }),
             let nextChar = reader.peek()
         else { return nil }
         if isEndOfTag(nextChar) || nextChar != "=" {
@@ -290,7 +272,7 @@ where Input: Collection, Input.Element == Character {
         }
         guard
             scanCharacter("="),
-            skipZeroOrMore({ isAsciiWhitespace($0) }),
+            skipZeroOrMore({ CharacterSet.asciiWhitespace.contains($0) }),
             let nextChar = reader.peek()
         else { return nil }
         if isEndOfTag(nextChar) {
