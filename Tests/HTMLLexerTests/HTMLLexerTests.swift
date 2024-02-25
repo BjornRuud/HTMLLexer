@@ -4,7 +4,7 @@ import XCTest
 final class HTMLLexerTests: XCTestCase {
     func testByteOrderMark() throws {
         let html = "\u{FEFF} asdf"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .byteOrderMark,
             .text(" asdf")
@@ -14,7 +14,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testNoTag() throws {
         let html = "<< > < <"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .text(html)
         ]
@@ -23,7 +23,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testCommentTag() throws {
         let html = "<!-- Foo -->"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .comment(" Foo ")
         ]
@@ -32,7 +32,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testCommentNoEnd() throws {
         let html = "Asdf <!-- Foo"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .text("Asdf <!-- Foo")
         ]
@@ -41,7 +41,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testCommentDoubleEnd() throws {
         let html = "<!-- Foo -->-->"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .comment(" Foo "),
             .text("-->")
@@ -51,7 +51,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testBeginTag() throws {
         let html = "<b><b >"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .tagStart(name: "b", attributes: [], isSelfClosing: false),
             .tagStart(name: "b", attributes: [], isSelfClosing: false),
@@ -61,7 +61,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testBeginMalformedTag() throws {
         let html = "< b><b🎃 >"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .text("< b><b🎃 >")
         ]
@@ -70,7 +70,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testBeginSelfClosedTag() throws {
         let html = "<div/><div />"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .tagStart(name: "div", attributes: [], isSelfClosing: true),
             .tagStart(name: "div", attributes: [], isSelfClosing: true),
@@ -80,7 +80,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testBeginSelfClosedMalformedTag() throws {
         let html = "<div/ ><div / >"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .text(html)
         ]
@@ -89,7 +89,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testEndTag() throws {
         let html = "</b></b >"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .tagEnd(name: "b"),
             .tagEnd(name: "b"),
@@ -99,7 +99,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testEndMalformedTag() throws {
         let html = "</ b> </b/> </b /> </🎃>"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .text(html)
         ]
@@ -108,7 +108,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testTagAttributeSingle() throws {
         let html = "<div custom><div  custom/><div custom ><div custom />"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .tagStart(name: "div", attributes: [.init(name: "custom", value: nil)], isSelfClosing: false),
             .tagStart(name: "div", attributes: [.init(name: "custom", value: nil)], isSelfClosing: true),
@@ -120,7 +120,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testTagAttributeSingleEqual() throws {
         let html = "<div custom=><div  custom=/><div custom= ><div custom= />"
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .tagStart(name: "div", attributes: [.init(name: "custom", value: nil)], isSelfClosing: false),
             .tagStart(name: "div", attributes: [.init(name: "custom", value: nil)], isSelfClosing: true),
@@ -132,7 +132,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testTagAttributeAmpersandQuotedValue() throws {
         let html = #"<div foo="bar"><div  foo="bar"/><div foo="bar" ><div foo="bar" />"#
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: false),
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: true),
@@ -144,7 +144,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testTagAttributeApostropheQuotedValue() throws {
         let html = #"<div foo='bar'><div  foo='bar'/><div foo='bar' ><div foo='bar' />"#
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: false),
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: true),
@@ -156,7 +156,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testTagAttributeUnquotedValue() throws {
         let html = #"<div foo=bar><div  foo=bar /><div foo=bar bar=foo >"#
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: false),
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: true),
@@ -167,7 +167,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testTagAttributeMix() throws {
         let html = #"<div a b=foo c d="foo" e f='foo'>"#
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .tagStart(name: "div", attributes: [
                 .init(name: "a", value: nil),
@@ -183,7 +183,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testDoctype() throws {
         let html = #"<!DOCTYPE html><!doctype HTML><!dOcTyPe HtMl>"#
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .doctype(name: "DOCTYPE", type: "html", legacy: nil),
             .doctype(name: "doctype", type: "HTML", legacy: nil),
@@ -194,7 +194,7 @@ final class HTMLLexerTests: XCTestCase {
 
     func testDoctypeLegacy() throws {
         let html = #"<!DOCTYPE html SYSTEM "about:legacy-compat">"#
-        let tokens = HTMLLexer.parse(html: html)
+        let tokens = HTMLLexer(html: html).map { $0 }
         let reference: [HTMLToken] = [
             .doctype(name: "DOCTYPE", type: "html", legacy: #"SYSTEM "about:legacy-compat""#)
         ]

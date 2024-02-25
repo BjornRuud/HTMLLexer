@@ -10,6 +10,14 @@ final class CharacterReaderTests: XCTestCase {
         XCTAssertEqual("bc", String(reader.input[reader.readIndex..<reader.input.endIndex]))
     }
 
+    func testConsumeCount() throws {
+        let reference = "abc"
+        var reader = CharacterReader(input: reference)
+        XCTAssertEqual(reader.peek(), "a")
+        reader.consume(count: 2)
+        XCTAssertEqual(reader.peek(), "c")
+    }
+
     func testConsumeUpTo() throws {
         let reference = "abc"
         var reader = CharacterReader(input: reference)
@@ -40,21 +48,5 @@ final class CharacterReaderTests: XCTestCase {
         XCTAssertEqual(reader.peek(), "a")
         reader.setReadIndex(reader.input.index(after: reader.readIndex))
         XCTAssertEqual(reader.peek(), "b")
-    }
-
-    func testSkipCount() throws {
-        let reference = "abc"
-        var reader = CharacterReader(input: reference)
-        XCTAssertEqual(reader.peek(), "a")
-        reader.skip(2)
-        XCTAssertEqual(reader.peek(), "c")
-    }
-
-    func testSkipWhile() throws {
-        let reference = "abc"
-        var reader = CharacterReader(input: reference)
-        XCTAssertEqual(reader.peek(), "a")
-        reader.skip(while: { $0 == "a" || $0 == "b" })
-        XCTAssertEqual(reader.peek(), "c")
     }
 }

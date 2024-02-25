@@ -1,5 +1,3 @@
-import Foundation
-
 struct CharacterReader<Input>
 where Input: Collection, Input.Element == Character {
     let input: Input
@@ -15,21 +13,36 @@ where Input: Collection, Input.Element == Character {
         self.readIndex = input.startIndex
     }
 
+    @discardableResult
     mutating func consume() -> Character? {
         guard readIndex < input.endIndex
         else { return nil }
+
         let character = input[readIndex]
         input.formIndex(after: &readIndex)
         return character
     }
 
+    @discardableResult
+    mutating func consume(count: Int) -> Input.SubSequence {
+        let startIndex = readIndex
+        for _ in 0..<count {
+            if consume() == nil { break }
+        }
+        return input[startIndex..<readIndex]
+    }
+
+    @discardableResult
     mutating func consume(upTo character: Character) -> Input.SubSequence {
         return consume(while: { $0 != character })
     }
 
+    @discardableResult
     mutating func consume(while predicate: (Character) -> Bool) -> Input.SubSequence {
         let startIndex = readIndex
-        skip(while: predicate)
+        while let character = peek(), predicate(character) {
+            _ = consume()
+        }
         return input[startIndex..<readIndex]
     }
 
@@ -44,21 +57,8 @@ where Input: Collection, Input.Element == Character {
             readIndex = input.startIndex
         } else if index > input.endIndex {
             readIndex = input.endIndex
-        }
-        readIndex = index
-    }
-
-    mutating func skip(_ count: Int) {
-        for _ in 0..<count {
-            guard readIndex < input.endIndex
-            else { break }
-            input.formIndex(after: &readIndex)
-        }
-    }
-
-    mutating func skip(while predicate: (Character) -> Bool) {
-        while let character = peek(), predicate(character) {
-            input.formIndex(after: &readIndex)
+        } else {
+            readIndex = index
         }
     }
 }
