@@ -19,10 +19,6 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            url: "https://github.com/BjornRuud/CollectionScanner.git",
-            branch: "main"
-        ),
-        .package(
             url: "https://github.com/pointfreeco/swift-parsing.git",
             from: "0.13.0"
         )
@@ -31,9 +27,9 @@ let package = Package(
         .target(
             name: "HTMLLexer",
             dependencies: [
-                "CollectionScanner",
                 .product(name: "Parsing", package: "swift-parsing")
             ]
+
         ),
         .testTarget(
             name: "HTMLLexerTests",

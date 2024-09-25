@@ -1,15 +1,6 @@
 {
   "pins" : [
     {
-      "identity" : "collectionscanner",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/BjornRuud/CollectionScanner.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "cad117848a6af825b5388d014e82f82bf72579d8"
-      }
-    },
-    {
       "identity" : "swift-case-paths",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-case-paths",
