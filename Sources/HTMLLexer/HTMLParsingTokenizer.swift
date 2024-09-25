@@ -1,19 +1,44 @@
 import Foundation
 import Parsing
 
+struct HTMLParsingError: Error {
+    let message: String
+}
+
+public enum HTMLParsingToken: Equatable {
+    case byteOrderMark
+    case comment(String.SubSequence)
+    case doctype(name: String.SubSequence, type: String.SubSequence, legacy: String.SubSequence?)
+    case tagStart(name: String.SubSequence, attributes: [TagAttribute], isSelfClosing: Bool)
+    case tagEnd(name: String.SubSequence)
+    case text(String.SubSequence)
+}
+
+extension HTMLParsingToken {
+    public struct TagAttribute: Equatable {
+        public let name: String.SubSequence
+        public let value: String.SubSequence?
+
+        public init(name: String.SubSequence, value: String.SubSequence?) {
+            self.name = name
+            self.value = value
+        }
+    }
+}
+
 /// Namespace containing various parsers to map HTML elements to tokens according
 /// to the [HTML specification](https://html.spec.whatwg.org/multipage/syntax.html).
 enum HTMLTokenParser {
     static let byteOrderMark = Parse(input: Substring.self) {
         "\u{FEFF}"
-    }.map { HTMLToken.byteOrderMark }
+    }.map { HTMLParsingToken.byteOrderMark }
 
     static let comment = Parse(input: Substring.self) {
         "!--"
         PrefixUpTo("-->")
         "-->"
     }.map { (comment: Substring) in
-        HTMLToken.comment(String(comment))
+        HTMLParsingToken.comment(comment)
     }
 
     static let doctype = Parse(input: Substring.self) {
@@ -25,10 +50,10 @@ enum HTMLTokenParser {
         Prefix { $0 != ">" }.map { $0.isEmpty ? nil : $0 }
         ">"
     }.map { (name: Substring, type: Substring, legacy: Substring?) in
-        HTMLToken.doctype(
-            name: String(name),
-            type: String(type),
-            legacy: legacy.map { String($0) }
+        HTMLParsingToken.doctype(
+            name: name,
+            type: type,
+            legacy: legacy
         )
     }
 
@@ -37,13 +62,13 @@ enum HTMLTokenParser {
         Optionally {
             Skip { oneOrMoreWhitespace }
             tagAttributes
-        }.map { $0 ?? [HTMLToken.TagAttribute]() }
+        }.map { $0 ?? [HTMLParsingToken.TagAttribute]() }
         Skip { CharacterSet.asciiWhitespace }
         Optionally { "/" }.map { $0 != nil }
         ">"
-    }.map { (name: Substring, attributes: [HTMLToken.TagAttribute], isSelfClosing: Bool) in
-        HTMLToken.tagStart(
-            name: String(name),
+    }.map { (name: Substring, attributes: [HTMLParsingToken.TagAttribute], isSelfClosing: Bool) in
+        HTMLParsingToken.tagStart(
+            name: name,
             attributes: attributes,
             isSelfClosing: isSelfClosing
         )
@@ -55,7 +80,7 @@ enum HTMLTokenParser {
         Skip { CharacterSet.asciiWhitespace }
         ">"
     }.map { (name: Substring) in
-        HTMLToken.tagEnd(name: String(name))
+        HTMLParsingToken.tagEnd(name: name)
     }
 
     static let tagName = Prefix<Substring>(1...) {
@@ -95,9 +120,9 @@ enum HTMLTokenParser {
         }
         Skip { CharacterSet.asciiWhitespace }
     }.map { (name: Substring, value: Substring?) in
-        HTMLToken.TagAttribute(
-            name: String(name),
-            value: value.map { String($0) }
+        HTMLParsingToken.TagAttribute(
+            name: name,
+            value: value
         )
     }
 
@@ -129,8 +154,8 @@ enum HTMLTokenParser {
 }
 
 public struct HTMLLexerParsing {
-    public static func parse(html: String) -> [HTMLToken] {
-        var tokens = [HTMLToken]()
+    public static func parse(html: String) -> [HTMLParsingToken] {
+        var tokens = [HTMLParsingToken]()
         var input = html[...]
 
         if let bom = try? HTMLTokenParser.byteOrderMark.parse(&input) {
@@ -147,7 +172,7 @@ public struct HTMLLexerParsing {
             }
             if let tagToken = try? HTMLTokenParser.tag.parse(&input) {
                 if textEndIndex > textStartIndex {
-                    let text = String(html[textStartIndex..<textEndIndex])
+                    let text = html[textStartIndex..<textEndIndex]
                     tokens.append(.text(text))
                 }
                 tokens.append(tagToken)
@@ -159,7 +184,7 @@ public struct HTMLLexerParsing {
             }
         }
         if textEndIndex > textStartIndex {
-            let text = String(html[textStartIndex..<textEndIndex])
+            let text = html[textStartIndex..<textEndIndex]
             tokens.append(.text(text))
         }
         return tokens

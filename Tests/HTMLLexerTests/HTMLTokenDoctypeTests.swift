@@ -6,7 +6,7 @@ final class HTMLTokenDoctypeTests: XCTestCase {
         let parser = HTMLTokenParser.doctype
         var text = Substring("!DOCTYPE html>")
         let token = try XCTUnwrap(try parser.parse(&text))
-        let reference = HTMLToken.doctype(name: "DOCTYPE", type: "html", legacy: nil)
+        let reference = HTMLParsingToken.doctype(name: "DOCTYPE", type: "html", legacy: nil)
         XCTAssertEqual(token, reference)
     }
 
@@ -20,7 +20,7 @@ final class HTMLTokenDoctypeTests: XCTestCase {
         let parser = HTMLTokenParser.doctype
         var text = Substring("!doctype HTML>")
         let token = try XCTUnwrap(try parser.parse(&text))
-        let reference = HTMLToken.doctype(name: "doctype", type: "HTML", legacy: nil)
+        let reference = HTMLParsingToken.doctype(name: "doctype", type: "HTML", legacy: nil)
         XCTAssertEqual(token, reference)
     }
 
@@ -28,7 +28,7 @@ final class HTMLTokenDoctypeTests: XCTestCase {
         let parser = HTMLTokenParser.doctype
         var text = Substring("!dOcTyPe HtMl>")
         let token = try XCTUnwrap(try parser.parse(&text))
-        let reference = HTMLToken.doctype(name: "dOcTyPe", type: "HtMl", legacy: nil)
+        let reference = HTMLParsingToken.doctype(name: "dOcTyPe", type: "HtMl", legacy: nil)
         XCTAssertEqual(token, reference)
     }
 
@@ -36,7 +36,7 @@ final class HTMLTokenDoctypeTests: XCTestCase {
         let parser = HTMLTokenParser.doctype
         var text = Substring(#"!DOCTYPE html SYSTEM "about:legacy-compat">"#)
         let token = try XCTUnwrap(try parser.parse(&text))
-        let reference = HTMLToken.doctype(name: "DOCTYPE", type: "html", legacy: #"SYSTEM "about:legacy-compat""#)
+        let reference = HTMLParsingToken.doctype(name: "DOCTYPE", type: "html", legacy: #"SYSTEM "about:legacy-compat""#)
         XCTAssertEqual(token, reference)
     }
 }

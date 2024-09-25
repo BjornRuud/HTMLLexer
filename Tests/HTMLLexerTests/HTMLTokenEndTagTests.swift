@@ -6,7 +6,7 @@ final class HTMLTokenEndTagTests: XCTestCase {
         let parser = HTMLTokenParser.endTag
         var text = Substring("/b>")
         let token = try parser.parse(&text)
-        let reference = HTMLToken.tagEnd(name: "b")
+        let reference = HTMLParsingToken.tagEnd(name: "b")
         XCTAssertEqual(token, reference)
     }
 
@@ -14,7 +14,7 @@ final class HTMLTokenEndTagTests: XCTestCase {
         let parser = HTMLTokenParser.endTag
         var text = Substring("/b >")
         let token = try parser.parse(&text)
-        let reference = HTMLToken.tagEnd(name: "b")
+        let reference = HTMLParsingToken.tagEnd(name: "b")
         XCTAssertEqual(token, reference)
     }
 

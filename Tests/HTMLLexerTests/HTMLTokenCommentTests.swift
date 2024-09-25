@@ -6,7 +6,7 @@ final class HTMLTokenCommentTests: XCTestCase {
         let parser = HTMLTokenParser.comment
         var text = Substring("!-- Foo -->")
         let token = try XCTUnwrap(try parser.parse(&text))
-        let reference = HTMLToken.comment(" Foo ")
+        let reference = HTMLParsingToken.comment(" Foo ")
         XCTAssertEqual(token, reference)
         XCTAssertEqual(text.count, 0)
     }
@@ -30,7 +30,7 @@ final class HTMLTokenCommentTests: XCTestCase {
         let parser = HTMLTokenParser.comment
         var text = Substring("!-- Foo -->-->")
         let token = try XCTUnwrap(try parser.parse(&text))
-        let reference = HTMLToken.comment(" Foo ")
+        let reference = HTMLParsingToken.comment(" Foo ")
         XCTAssertEqual(token, reference)
         XCTAssertEqual(text.count, 3)
     }
