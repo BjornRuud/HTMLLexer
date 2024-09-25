@@ -35,20 +35,21 @@ enum HTMLTokenParser {
 
     static let comment = Parse(input: Substring.self) {
         "!--"
-        PrefixUpTo("-->")
-        "-->"
+        PrefixThrough("-->")
     }.map { (comment: Substring) in
-        HTMLParsingToken.comment(comment)
+        HTMLParsingToken.comment(comment.dropLast(3))
     }
 
     static let doctype = Parse(input: Substring.self) {
         "!"
-        Prefix(7).filter { $0.lowercased() == "doctype" }
+        Prefix(7).filter { $0.uppercased() == "DOCTYPE" }
         Skip { oneOrMoreWhitespace }
         Prefix(4).filter { $0.lowercased() == "html" }
         Skip { CharacterSet.asciiWhitespace }
-        Prefix { $0 != ">" }.map { $0.isEmpty ? nil : $0 }
-        ">"
+        PrefixThrough(">").map {
+            let legacy = $0.dropLast()
+            return legacy.isEmpty ? nil : legacy
+        }
     }.map { (name: Substring, type: Substring, legacy: Substring?) in
         HTMLParsingToken.doctype(
             name: name,
@@ -90,19 +91,23 @@ enum HTMLTokenParser {
     static let tagAttributeName = CharacterSet.htmlAttributeName.filter { !$0.isEmpty }
 
     static let tagAttributeValue = OneOf {
-        Parse {
-            "'"
-            PrefixUpTo("'")
-            "'"
-        }
-        Parse {
-            "\""
-            PrefixUpTo("\"")
-            "\""
-        }
-        CharacterSet.htmlNonQuotedAttributeValue
-            .filter { !$0.isEmpty && $0.last != "/" }
+        tagAttributeSingleQuotedValue
+        tagAttributeDoubleQuotedValue
+        tagAttributeNonQuotedValue
     }
+
+    static let tagAttributeNonQuotedValue = CharacterSet.htmlNonQuotedAttributeValue
+        .filter { !$0.isEmpty && $0.last != "/" }
+
+    static let tagAttributeSingleQuotedValue = Parse(input: Substring.self) {
+        "'"
+        PrefixThrough("'")
+    }.map { $0.dropLast() }
+
+    static let tagAttributeDoubleQuotedValue = Parse(input: Substring.self) {
+        "\""
+        PrefixThrough("\"")
+    }.map { $0.dropLast() }
 
     static let tagAttribute = Parse(input: Substring.self) {
         tagAttributeName
@@ -154,9 +159,9 @@ enum HTMLTokenParser {
 }
 
 public struct HTMLLexerParsing {
-    public static func parse(html: String) -> [HTMLParsingToken] {
+    public func parse(html: Substring) throws -> [HTMLParsingToken] {
         var tokens = [HTMLParsingToken]()
-        var input = html[...]
+        var input = html
 
         if let bom = try? HTMLTokenParser.byteOrderMark.parse(&input) {
             tokens.append(bom)
@@ -188,5 +193,18 @@ public struct HTMLLexerParsing {
             tokens.append(.text(text))
         }
         return tokens
+    }
+
+    public func parse(html: String) throws -> [HTMLParsingToken] {
+        return try parse(html: html[...])
+    }
+
+    public static func parse(html: Substring) throws -> [HTMLParsingToken] {
+        let parser = HTMLLexerParsing()
+        return try parser.parse(html: html)
+    }
+
+    public static func parse(html: String) throws -> [HTMLParsingToken] {
+        return try parse(html: html[...])
     }
 }

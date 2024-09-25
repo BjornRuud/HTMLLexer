@@ -4,7 +4,7 @@ import XCTest
 final class HTMLLexerParsingTests: XCTestCase {
     func testByteOrderMark() throws {
         let html = "\u{FEFF} asdf"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .byteOrderMark,
             .text(" asdf")
@@ -14,7 +14,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testNoTag() throws {
         let html = "<< > < <"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .text("<< > < <")
         ]
@@ -23,7 +23,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testCommentTag() throws {
         let html = "<!-- Foo -->"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .comment(" Foo ")
         ]
@@ -32,7 +32,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testCommentNoEnd() throws {
         let html = "Asdf <!-- Foo"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .text("Asdf <!-- Foo")
         ]
@@ -41,7 +41,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testCommentDoubleEnd() throws {
         let html = "<!-- Foo -->-->"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .comment(" Foo "),
             .text("-->")
@@ -51,7 +51,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testBeginTag() throws {
         let html = "<b><b >"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .tagStart(name: "b", attributes: [], isSelfClosing: false),
             .tagStart(name: "b", attributes: [], isSelfClosing: false),
@@ -61,7 +61,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testStartTagNoEnd() throws {
         let html = "<b><b "
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .tagStart(name: "b", attributes: [], isSelfClosing: false),
             .text("<b ")
@@ -71,7 +71,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testBeginMalformedTag() throws {
         let html = "< b><b🎃 >"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .text("< b><b🎃 >")
         ]
@@ -80,7 +80,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testBeginSelfClosedTag() throws {
         let html = "<div/><div />"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .tagStart(name: "div", attributes: [], isSelfClosing: true),
             .tagStart(name: "div", attributes: [], isSelfClosing: true),
@@ -90,7 +90,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testBeginSelfClosedMalformedTag() throws {
         let html = "<div/ ><div / >"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .text("<div/ ><div / >")
         ]
@@ -99,7 +99,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testEndTag() throws {
         let html = "</b></b >"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .tagEnd(name: "b"),
             .tagEnd(name: "b"),
@@ -109,7 +109,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testEndMalformedTag() throws {
         let html = "</ b> </b/> </b /> </🎃>"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .text("</ b> </b/> </b /> </🎃>")
         ]
@@ -118,7 +118,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testTagAttributeSingle() throws {
         let html = "<div custom><div  custom/><div custom ><div custom />"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .tagStart(name: "div", attributes: [.init(name: "custom", value: nil)], isSelfClosing: false),
             .tagStart(name: "div", attributes: [.init(name: "custom", value: nil)], isSelfClosing: true),
@@ -130,7 +130,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testTagAttributeSingleEqual() throws {
         let html = "<div custom=><div  custom=/><div custom= ><div custom= />"
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .text("<div custom=><div  custom=/><div custom= ><div custom= />")
         ]
@@ -139,7 +139,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testTagAttributeAmpersandQuotedValue() throws {
         let html = #"<div foo="bar"><div  foo="bar"/><div foo="bar" ><div foo="bar" />"#
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: false),
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: true),
@@ -151,7 +151,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testTagAttributeApostropheQuotedValue() throws {
         let html = #"<div foo='bar'><div  foo='bar'/><div foo='bar' ><div foo='bar' />"#
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: false),
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: true),
@@ -163,7 +163,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testTagAttributeUnquotedValue() throws {
         let html = #"<div foo=bar><div  foo=bar /><div foo=bar bar=foo >"#
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: false),
             .tagStart(name: "div", attributes: [.init(name: "foo", value: "bar")], isSelfClosing: true),
@@ -177,7 +177,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testTagAttributeMix() throws {
         let html = #"<div a b=foo c d="foo" e f='foo'>"#
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .tagStart(name: "div", attributes: [
                 .init(name: "a", value: nil),
@@ -193,7 +193,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testDoctype() throws {
         let html = #"<!DOCTYPE html><!doctype HTML><!dOcTyPe HtMl>"#
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .doctype(name: "DOCTYPE", type: "html", legacy: nil),
             .doctype(name: "doctype", type: "HTML", legacy: nil),
@@ -204,7 +204,7 @@ final class HTMLLexerParsingTests: XCTestCase {
 
     func testDoctypeLegacy() throws {
         let html = #"<!DOCTYPE html SYSTEM "about:legacy-compat">"#
-        let tokens = HTMLLexerParsing.parse(html: html)
+        let tokens = try HTMLLexerParsing.parse(html: html)
         let reference: [HTMLParsingToken] = [
             .doctype(name: "DOCTYPE", type: "html", legacy: "SYSTEM \"about:legacy-compat\"")
         ]
