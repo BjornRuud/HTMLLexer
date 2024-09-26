@@ -23,7 +23,8 @@ let package = Package(
         ),
         .testTarget(
             name: "HTMLLexerTests",
-            dependencies: ["HTMLLexer"]
+            dependencies: ["HTMLLexer"],
+            resources: [.process("Data")]
         ),
     ]
 )
