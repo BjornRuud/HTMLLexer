@@ -7,19 +7,19 @@ struct HTMLParsingError: Error {
 
 public enum HTMLParsingToken: Equatable {
     case byteOrderMark
-    case comment(String.SubSequence)
-    case doctype(name: String.SubSequence, type: String.SubSequence, legacy: String.SubSequence?)
-    case tagStart(name: String.SubSequence, attributes: [TagAttribute], isSelfClosing: Bool)
-    case tagEnd(name: String.SubSequence)
-    case text(String.SubSequence)
+    case comment(Substring)
+    case doctype(name: Substring, type: Substring, legacy: Substring?)
+    case tagStart(name: Substring, attributes: [TagAttribute], isSelfClosing: Bool)
+    case tagEnd(name: Substring)
+    case text(Substring)
 }
 
 extension HTMLParsingToken {
     public struct TagAttribute: Equatable {
-        public let name: String.SubSequence
-        public let value: String.SubSequence?
+        public let name: Substring
+        public let value: Substring?
 
-        public init(name: String.SubSequence, value: String.SubSequence?) {
+        public init(name: Substring, value: Substring?) {
             self.name = name
             self.value = value
         }
