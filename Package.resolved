@@ -5,17 +5,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-case-paths",
       "state" : {
-        "revision" : "5da6989aae464f324eef5c5b52bdb7974725ab81",
-        "version" : "1.0.0"
+        "revision" : "642e6aab8e03e5f992d9c83e38c5be98cfad5078",
+        "version" : "1.5.5"
       }
     },
     {
-      "identity" : "swift-parsing",
+      "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-parsing.git",
+      "location" : "https://github.com/swiftlang/swift-syntax",
       "state" : {
-        "revision" : "a0e7d73f462c1c38c59dc40a3969ac40cea42950",
-        "version" : "0.13.0"
+        "revision" : "0687f71944021d616d34d922343dcef086855920",
+        "version" : "600.0.1"
       }
     },
     {
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "23cbf2294e350076ea4dbd7d5d047c1e76b03631",
-        "version" : "1.0.2"
+        "revision" : "27d767d643fa2cf083d0a73d74fa84cacb53e85c",
+        "version" : "1.4.1"
       }
     }
   ],

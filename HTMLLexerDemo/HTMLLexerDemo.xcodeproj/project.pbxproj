@@ -13,6 +13,8 @@
 		8E4E18A62ADC3A0500F4DEC7 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8E4E18A52ADC3A0500F4DEC7 /* Preview Assets.xcassets */; };
 		8E4E18AE2ADC3B4E00F4DEC7 /* HTMLLexer in Frameworks */ = {isa = PBXBuildFile; productRef = 8E4E18AD2ADC3B4E00F4DEC7 /* HTMLLexer */; };
 		8E4E18B12ADC3BB900F4DEC7 /* HTMLStandard.html in Resources */ = {isa = PBXBuildFile; fileRef = 8E4E18B02ADC3BB900F4DEC7 /* HTMLStandard.html */; };
+		8EF1E44F2CA5938F00A6CF91 /* HTMLLexer in Frameworks */ = {isa = PBXBuildFile; productRef = 8EF1E44E2CA5938F00A6CF91 /* HTMLLexer */; };
+		8EF1E4522CA593F900A6CF91 /* HTMLLexer in Frameworks */ = {isa = PBXBuildFile; productRef = 8EF1E4512CA593F900A6CF91 /* HTMLLexer */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +32,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8EF1E4522CA593F900A6CF91 /* HTMLLexer in Frameworks */,
+				8EF1E44F2CA5938F00A6CF91 /* HTMLLexer in Frameworks */,
 				8E4E18AE2ADC3B4E00F4DEC7 /* HTMLLexer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -100,6 +104,8 @@
 			name = HTMLLexerDemo;
 			packageProductDependencies = (
 				8E4E18AD2ADC3B4E00F4DEC7 /* HTMLLexer */,
+				8EF1E44E2CA5938F00A6CF91 /* HTMLLexer */,
+				8EF1E4512CA593F900A6CF91 /* HTMLLexer */,
 			);
 			productName = HTMLLexerDemo;
 			productReference = 8E4E189A2ADC3A0200F4DEC7 /* HTMLLexerDemo.app */;
@@ -130,7 +136,7 @@
 			);
 			mainGroup = 8E4E18912ADC3A0200F4DEC7;
 			packageReferences = (
-				8E4E18AC2ADC3B4E00F4DEC7 /* XCLocalSwiftPackageReference ".." */,
+				8EF1E4502CA593F900A6CF91 /* XCLocalSwiftPackageReference "../../HTMLLexer" */,
 			);
 			productRefGroup = 8E4E189B2ADC3A0200F4DEC7 /* Products */;
 			projectDirPath = "";
@@ -225,6 +231,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -278,6 +285,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -381,14 +389,22 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		8E4E18AC2ADC3B4E00F4DEC7 /* XCLocalSwiftPackageReference ".." */ = {
+		8EF1E4502CA593F900A6CF91 /* XCLocalSwiftPackageReference "../../HTMLLexer" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ..;
+			relativePath = ../../HTMLLexer;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		8E4E18AD2ADC3B4E00F4DEC7 /* HTMLLexer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HTMLLexer;
+		};
+		8EF1E44E2CA5938F00A6CF91 /* HTMLLexer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HTMLLexer;
+		};
+		8EF1E4512CA593F900A6CF91 /* HTMLLexer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = HTMLLexer;
 		};

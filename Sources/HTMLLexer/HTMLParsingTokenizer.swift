@@ -1,5 +1,5 @@
 import Foundation
-import Parsing
+@preconcurrency import Parsing
 
 struct HTMLParsingError: Error {
     let message: String
@@ -161,35 +161,34 @@ enum HTMLTokenParser {
 public struct HTMLLexerParsing {
     public func parse(html: Substring) throws -> [HTMLParsingToken] {
         var tokens = [HTMLParsingToken]()
-        var input = html
+        var input = html[...]
+        var text = html[...]
 
         if let bom = try? HTMLTokenParser.byteOrderMark.parse(&input) {
             tokens.append(bom)
+            text = text.dropFirst()
         }
-        var textStartIndex = input.startIndex
-        var textEndIndex = input.startIndex
+
         while !input.isEmpty {
-            if let possibleTagIndex = input.firstIndex(of: "<") {
-                input = input[possibleTagIndex...]
-            } else {
-                textEndIndex = html.endIndex
+            guard let possibleTagIndex = input.firstIndex(of: "<") else {
+                text = html[text.startIndex...]
                 break
             }
+
+            input = html[possibleTagIndex...]
             if let tagToken = try? HTMLTokenParser.tag.parse(&input) {
-                if textEndIndex > textStartIndex {
-                    let text = html[textStartIndex..<textEndIndex]
+                text = html[text.startIndex..<possibleTagIndex]
+                if !text.isEmpty {
                     tokens.append(.text(text))
                 }
                 tokens.append(tagToken)
-                textStartIndex = input.startIndex
-                textEndIndex = input.startIndex
+                text = html[input.startIndex...]
             } else {
-                // No tag found, treat everything parsed as text
-                textEndIndex = input.startIndex
+                input = html[possibleTagIndex...].dropFirst()
             }
         }
-        if textEndIndex > textStartIndex {
-            let text = html[textStartIndex..<textEndIndex]
+
+        if !text.isEmpty {
             tokens.append(.text(text))
         }
         return tokens

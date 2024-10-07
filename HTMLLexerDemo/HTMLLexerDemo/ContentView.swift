@@ -39,8 +39,10 @@ struct ContentView: View {
         guard let html = await loadHtml() else { return }
         let handcraftedTime = await benchmarkHandcrafted(html: html)
         self.handcraftedTime = handcraftedTime
+        print("Handcrafted time: \(handcraftedTime)")
         let swiftParsingTime = await benchmarkSwiftParsing(html: html)
         self.swiftParsingTime = swiftParsingTime
+        print("Swift Parsing time: \(swiftParsingTime)")
     }
 
     private func benchmarkHandcrafted(html: String) async -> TimeInterval {
@@ -52,7 +54,7 @@ struct ContentView: View {
 
     private func benchmarkSwiftParsing(html: String) async -> TimeInterval {
         let startTime = Date()
-        let _ = HTMLLexerParsing.parse(html: html)
+        let _ = try! HTMLLexerParsing.parse(html: html)
         let stopTime = Date()
         return stopTime.timeIntervalSinceReferenceDate - startTime.timeIntervalSinceReferenceDate
     }
