@@ -18,9 +18,13 @@ let package = Package(
         ),
     ],
     dependencies: [
+//        .package(
+//            url: "https://github.com/pointfreeco/swift-parsing.git",
+//            from: "0.13.0"
+//        )
         .package(
-            url: "https://github.com/pointfreeco/swift-parsing.git",
-            from: "0.13.0"
+            url: "https://github.com/BjornRuud/swift-parsing.git",
+            branch: "prefix-faster"
         )
     ],
     targets: [
