@@ -60,7 +60,7 @@ final class HTMLTokenTagAttributeTests: XCTestCase {
 
     func testTagAttributes() throws {
         let parser = HTMLTokenParser.TagAttributes()
-        var text = Substring("foo1 = 'bar1' foo2='bar2' foo3 foo4=bar4>")
+        var text = Substring("foo1 = 'bar1' foo2='bar2' foo3 foo4=bar4")
         let attributes = try parser.parse(&text)
         let reference: [HTMLParsingToken.TagAttribute] = [
             .init(name: "foo1", value: "bar1"),

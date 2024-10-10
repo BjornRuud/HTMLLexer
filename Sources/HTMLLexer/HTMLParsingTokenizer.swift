@@ -174,15 +174,16 @@ enum HTMLTokenParser {
     }
 
     struct TagAttributes: Parser {
-        var body: some Parser<Substring, [HTMLParsingToken.TagAttribute]> {
-            Many {
-                TagAttribute()
-            } terminator: {
-                OneOf {
-                    Peek { ">" }
-                    Peek { "/" }
+        func parse(_ input: inout Substring) throws -> [HTMLParsingToken.TagAttribute] {
+            var attributes = [HTMLParsingToken.TagAttribute]()
+            while let first = input.first {
+                if first == ">" || first == "/" {
+                    break
                 }
+                let attribute = try TagAttribute().parse(&input)
+                attributes.append(attribute)
             }
+            return attributes
         }
     }
 
