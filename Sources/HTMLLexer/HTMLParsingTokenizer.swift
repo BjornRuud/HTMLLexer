@@ -43,9 +43,9 @@ enum HTMLTokenParser {
     static let doctype = Parse(input: Substring.self) {
         "!"
         Prefix(7).filter { $0.uppercased() == "DOCTYPE" }
-        Skip { oneOrMoreWhitespace }
+        SkipASCIIWhitespace(min: 1)
         Prefix(4).filter { $0.lowercased() == "html" }
-        Skip { CharacterSet.asciiWhitespace }
+        SkipASCIIWhitespace(min: 0)
         PrefixThrough(">").map {
             let legacy = $0.dropLast()
             return legacy.isEmpty ? nil : legacy
@@ -61,7 +61,7 @@ enum HTMLTokenParser {
     static let startTag = Parse(input: Substring.self) {
         tagName
         Optionally {
-            Skip { oneOrMoreWhitespace }
+            SkipASCIIWhitespace(min: 1)
             tagAttributes
         }.map { $0 ?? [HTMLParsingToken.TagAttribute]() }
         Skip { CharacterSet.asciiWhitespace }
@@ -153,8 +153,14 @@ enum HTMLTokenParser {
 
     // Helpers
 
-    static let oneOrMoreWhitespace = Prefix<Substring>(1...) {
-        CharacterSet.asciiWhitespace.contains($0)
+    struct SkipASCIIWhitespace: Parser {
+        let min: Int
+
+        func parse(_ input: inout Substring) throws {
+            _ = try Prefix<Substring>(min...) {
+                CharacterSet.asciiWhitespace.contains($0)
+            }.parse(&input)
+        }
     }
 }
 
