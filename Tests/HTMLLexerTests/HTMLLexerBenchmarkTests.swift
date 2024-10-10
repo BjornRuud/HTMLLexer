@@ -16,9 +16,8 @@ class HTMLLexerBenchmarkTests: XCTestCase {
 
     func testParsingLexerSpeed() throws {
         let html = htmlString
-        let lexer = HTMLLexerParsing()
         measure {
-            _ = try! lexer.parse(html: html)
+            _ = try! HTMLLexerParsing.parse(html: html)
         }
     }
 }
