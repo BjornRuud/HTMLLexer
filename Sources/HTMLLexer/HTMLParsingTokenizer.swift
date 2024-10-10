@@ -49,7 +49,7 @@ enum HTMLTokenParser {
                 Prefix(7).filter { $0.uppercased() == "DOCTYPE" }
                 SkipASCIIWhitespace(min: 1)
                 Prefix(4).filter { $0.lowercased() == "html" }
-                SkipASCIIWhitespace(min: 0)
+                SkipASCIIWhitespace()
                 PrefixThrough(">").map {
                     let legacy = $0.dropLast()
                     return legacy.isEmpty ? nil : legacy
@@ -72,7 +72,7 @@ enum HTMLTokenParser {
                     SkipASCIIWhitespace(min: 1)
                     TagAttributes()
                 }.map { $0 ?? [HTMLParsingToken.TagAttribute]() }
-                Skip { CharacterSet.asciiWhitespace }
+                SkipASCIIWhitespace()
                 Optionally { "/" }.map { $0 != nil }
                 ">"
             }.map { name, attributes, isSelfClosing in
@@ -90,7 +90,7 @@ enum HTMLTokenParser {
             Parse {
                 "/"
                 TagName()
-                Skip { CharacterSet.asciiWhitespace }
+                SkipASCIIWhitespace()
                 ">"
             }.map { name in
                 HTMLParsingToken.tagEnd(name: name)
@@ -152,9 +152,9 @@ enum HTMLTokenParser {
             Parse {
                 TagAttributeName()
                 Optionally {
-                    Skip { CharacterSet.asciiWhitespace }
+                    SkipASCIIWhitespace()
                     "="
-                    Skip { CharacterSet.asciiWhitespace }
+                    SkipASCIIWhitespace()
                 }.flatMap {
                     if $0 == nil {
                         Always<Substring, Substring?>(nil)
@@ -163,7 +163,7 @@ enum HTMLTokenParser {
                             .map { Optional<Substring>($0) }
                     }
                 }
-                Skip { CharacterSet.asciiWhitespace }
+                SkipASCIIWhitespace()
             }.map { name, value in
                 HTMLParsingToken.TagAttribute(
                     name: name,
@@ -203,6 +203,10 @@ enum HTMLTokenParser {
 
     struct SkipASCIIWhitespace: Parser {
         let min: Int
+
+        init(min: Int = 0) {
+            self.min = min
+        }
 
         var body: some Parser<Substring, Void> {
             Skip {
