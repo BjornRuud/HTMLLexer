@@ -113,12 +113,22 @@ enum HTMLTokenParser {
     }
 
     struct TagAttributeValue: Parser {
-        var body: some Parser<Substring, Substring> {
-            OneOf {
-                TagAttributeSingleQuotedValue()
-                TagAttributeDoubleQuotedValue()
-                TagAttributeNonQuotedValue()
+        func parse(_ input: inout Substring) throws -> Substring? {
+            guard input.first == "=" else {
+                return nil
             }
+            input = input.dropFirst()
+            try SkipASCIIWhitespace().parse(&input)
+            let value: Substring
+            switch input.first {
+            case "'":
+                value = try TagAttributeSingleQuotedValue().parse(&input)
+            case "\"":
+                value = try TagAttributeDoubleQuotedValue().parse(&input)
+            default:
+                value = try TagAttributeNonQuotedValue().parse(&input)
+            }
+            return value
         }
     }
 
@@ -151,18 +161,8 @@ enum HTMLTokenParser {
         var body: some Parser<Substring, HTMLParsingToken.TagAttribute> {
             Parse {
                 TagAttributeName()
-                Optionally {
-                    SkipASCIIWhitespace()
-                    "="
-                    SkipASCIIWhitespace()
-                }.flatMap {
-                    if $0 == nil {
-                        Always<Substring, Substring?>(nil)
-                    } else {
-                        TagAttributeValue()
-                            .map { Optional<Substring>($0) }
-                    }
-                }
+                SkipASCIIWhitespace()
+                TagAttributeValue()
                 SkipASCIIWhitespace()
             }.map { name, value in
                 HTMLParsingToken.TagAttribute(
@@ -181,7 +181,6 @@ enum HTMLTokenParser {
                 OneOf {
                     Peek { ">" }
                     Peek { "/" }
-                    End()
                 }
             }
         }
