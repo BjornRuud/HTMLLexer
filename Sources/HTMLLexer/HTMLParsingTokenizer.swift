@@ -26,8 +26,10 @@ extension HTMLParsingToken {
 /// to the [HTML specification](https://html.spec.whatwg.org/multipage/syntax.html).
 enum HTMLTokenParser {
     struct ByteOrderMark: Parser {
-        var body: some Parser<Substring, HTMLParsingToken> {
-            "\u{FEFF}".map { HTMLParsingToken.byteOrderMark }
+        var body: some Parser<Substring, HTMLParsingToken?> {
+            Optionally {
+                "\u{FEFF}".map { HTMLParsingToken.byteOrderMark }
+            }
         }
     }
 
@@ -222,13 +224,13 @@ public struct HTMLLexerParsing {
     public func parse(html: Substring) throws -> [HTMLParsingToken] {
         var tokens = [HTMLParsingToken]()
         var input = html[...]
-        var text = html[...]
         let tagParser = HTMLTokenParser.Tag()
 
-        if let bom = try? HTMLTokenParser.ByteOrderMark().parse(&input) {
+        if let bom = try HTMLTokenParser.ByteOrderMark().parse(&input) {
             tokens.append(bom)
-            text = text.dropFirst()
         }
+
+        var text = input[...]
 
         while !input.isEmpty {
             guard let possibleTagIndex = input.firstIndex(of: "<") else {
