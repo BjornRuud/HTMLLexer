@@ -3,7 +3,7 @@ import XCTest
 
 final class HTMLTokenTagAttributeTests: XCTestCase {
     func testTagAttributeSingle() throws {
-        let parser = HTMLTokenParser.tagAttribute
+        let parser = HTMLTokenParser.TagAttribute()
         var text = Substring("custom")
         let attribute = try parser.parse(&text)
         XCTAssertEqual(attribute.name, "custom")
@@ -11,7 +11,7 @@ final class HTMLTokenTagAttributeTests: XCTestCase {
     }
 
     func testTagAttributeSingleQuote() throws {
-        let parser = HTMLTokenParser.tagAttribute
+        let parser = HTMLTokenParser.TagAttribute()
         var text = Substring("custom = 'foo'")
         let attribute = try parser.parse(&text)
         XCTAssertEqual(attribute.name, "custom")
@@ -19,13 +19,13 @@ final class HTMLTokenTagAttributeTests: XCTestCase {
     }
 
     func testTagAttributeSingleQuoteNoEnd() throws {
-        let parser = HTMLTokenParser.tagAttribute
+        let parser = HTMLTokenParser.TagAttribute()
         var text = Substring("custom = 'foo")
         XCTAssertThrowsError(try parser.parse(&text))
     }
 
     func testTagAttributeDoubleQuote() throws {
-        let parser = HTMLTokenParser.tagAttribute
+        let parser = HTMLTokenParser.TagAttribute()
         var text = Substring("custom = \"foo\"")
         let attribute = try parser.parse(&text)
         XCTAssertEqual(attribute.name, "custom")
@@ -33,19 +33,19 @@ final class HTMLTokenTagAttributeTests: XCTestCase {
     }
 
     func testTagAttributeDoubleQuoteNoEnd() throws {
-        let parser = HTMLTokenParser.tagAttribute
+        let parser = HTMLTokenParser.TagAttribute()
         var text = Substring("custom = \"foo")
         XCTAssertThrowsError(try parser.parse(&text))
     }
 
     func testTagAttributeEmpty() throws {
-        let parser = HTMLTokenParser.tagAttribute
+        let parser = HTMLTokenParser.TagAttribute()
         var text = Substring("")
         XCTAssertThrowsError(try parser.parse(&text))
     }
 
     func testTagAttributeUnquoted() throws {
-        let parser = HTMLTokenParser.tagAttribute
+        let parser = HTMLTokenParser.TagAttribute()
         var text = Substring("custom = foo")
         let attribute = try parser.parse(&text)
         XCTAssertEqual(attribute.name, "custom")
@@ -53,13 +53,13 @@ final class HTMLTokenTagAttributeTests: XCTestCase {
     }
 
     func testTagAttributeUnquotedEndSlash() throws {
-        let parser = HTMLTokenParser.tagAttribute
+        let parser = HTMLTokenParser.TagAttribute()
         var text = Substring("custom = foo/")
         XCTAssertThrowsError(try parser.parse(&text))
     }
 
     func testTagAttributes() throws {
-        let parser = HTMLTokenParser.tagAttributes
+        let parser = HTMLTokenParser.TagAttributes()
         var text = Substring("foo1 = 'bar1' foo2='bar2' foo3 foo4=bar4")
         let attributes = try parser.parse(&text)
         let reference: [HTMLParsingToken.TagAttribute] = [

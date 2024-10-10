@@ -3,7 +3,7 @@ import XCTest
 
 final class HTMLTokenCommentTests: XCTestCase {
     func testCommentTag() throws {
-        let parser = HTMLTokenParser.comment
+        let parser = HTMLTokenParser.Comment()
         var text = Substring("!-- Foo -->")
         let token = try XCTUnwrap(try parser.parse(&text))
         let reference = HTMLParsingToken.comment(" Foo ")
@@ -12,7 +12,7 @@ final class HTMLTokenCommentTests: XCTestCase {
     }
 
     func testCommentMalformed() throws {
-        let parser = HTMLTokenParser.comment
+        let parser = HTMLTokenParser.Comment()
         var text = Substring("!- Foo")
         let textLength = text.count
         XCTAssertNil(try? parser.parse(&text))
@@ -20,14 +20,14 @@ final class HTMLTokenCommentTests: XCTestCase {
     }
 
     func testCommentNoEnd() throws {
-        let parser = HTMLTokenParser.comment
+        let parser = HTMLTokenParser.Comment()
         var text = Substring("!-- Foo")
         XCTAssertNil(try? parser.parse(&text))
         XCTAssertEqual(text.count, 4)
     }
 
     func testCommentDoubleEnd() throws {
-        let parser = HTMLTokenParser.comment
+        let parser = HTMLTokenParser.Comment()
         var text = Substring("!-- Foo -->-->")
         let token = try XCTUnwrap(try parser.parse(&text))
         let reference = HTMLParsingToken.comment(" Foo ")

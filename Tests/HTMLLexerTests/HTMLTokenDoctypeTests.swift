@@ -3,7 +3,7 @@ import XCTest
 
 final class HTMLTokenDoctypeTests: XCTestCase {
     func testDoctype() throws {
-        let parser = HTMLTokenParser.doctype
+        let parser = HTMLTokenParser.DocType()
         var text = Substring("!DOCTYPE html>")
         let token = try XCTUnwrap(try parser.parse(&text))
         let reference = HTMLParsingToken.doctype(name: "DOCTYPE", type: "html", legacy: nil)
@@ -11,13 +11,13 @@ final class HTMLTokenDoctypeTests: XCTestCase {
     }
 
     func testDoctypeInvalid() throws {
-        let parser = HTMLTokenParser.doctype
+        let parser = HTMLTokenParser.DocType()
         var text = Substring("!DOC html>")
         XCTAssertNil(try? parser.parse(&text))
     }
 
     func testDocTypeInverse() throws {
-        let parser = HTMLTokenParser.doctype
+        let parser = HTMLTokenParser.DocType()
         var text = Substring("!doctype HTML>")
         let token = try XCTUnwrap(try parser.parse(&text))
         let reference = HTMLParsingToken.doctype(name: "doctype", type: "HTML", legacy: nil)
@@ -25,7 +25,7 @@ final class HTMLTokenDoctypeTests: XCTestCase {
     }
 
     func testDocTypeMixed() throws {
-        let parser = HTMLTokenParser.doctype
+        let parser = HTMLTokenParser.DocType()
         var text = Substring("!dOcTyPe HtMl>")
         let token = try XCTUnwrap(try parser.parse(&text))
         let reference = HTMLParsingToken.doctype(name: "dOcTyPe", type: "HtMl", legacy: nil)
@@ -33,7 +33,7 @@ final class HTMLTokenDoctypeTests: XCTestCase {
     }
 
     func testDoctypeLegacy() throws {
-        let parser = HTMLTokenParser.doctype
+        let parser = HTMLTokenParser.DocType()
         var text = Substring(#"!DOCTYPE html SYSTEM "about:legacy-compat">"#)
         let token = try XCTUnwrap(try parser.parse(&text))
         let reference = HTMLParsingToken.doctype(name: "DOCTYPE", type: "html", legacy: #"SYSTEM "about:legacy-compat""#)
