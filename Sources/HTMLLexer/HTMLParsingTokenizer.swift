@@ -1,10 +1,6 @@
 import Foundation
 @preconcurrency import Parsing
 
-struct HTMLParsingError: Error {
-    let message: String
-}
-
 public enum HTMLParsingToken: Equatable {
     case byteOrderMark
     case comment(Substring)
