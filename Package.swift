@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 
 import PackageDescription
 
@@ -17,9 +17,20 @@ let package = Package(
             targets: ["HTMLLexer"]
         ),
     ],
+    dependencies: [
+        // Use main until >0.13.0 is released to get faster PrefixThrough and PrefixUpTo
+        .package(
+            url: "https://github.com/pointfreeco/swift-parsing.git",
+            branch: "main"
+        )
+    ],
     targets: [
         .target(
-            name: "HTMLLexer"
+            name: "HTMLLexer",
+            dependencies: [
+                .product(name: "Parsing", package: "swift-parsing")
+            ]
+
         ),
         .testTarget(
             name: "HTMLLexerTests",

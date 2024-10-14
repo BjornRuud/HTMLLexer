@@ -7,10 +7,10 @@ class HTMLLexerBenchmarkTests: XCTestCase {
         return try! String(contentsOf: url)
     }
 
-    func testLexerSpeed() throws {
+    func testParsingLexerSpeed() throws {
         let html = htmlString
         measure {
-            _ = HTMLLexer.parse(html: html)
+            _ = try! HTMLLexer.parse(html: html)
         }
     }
 }
