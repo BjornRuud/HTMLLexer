@@ -1,7 +1,7 @@
 import XCTest
 @testable import HTMLLexer
 
-final class HTMLTokenEndTagTests: XCTestCase {
+final class EndTagTests: XCTestCase {
     func testPlain() throws {
         let parser = EndTag()
         let text = "/b>".utf8

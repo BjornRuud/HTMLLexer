@@ -1,7 +1,7 @@
 import XCTest
 @testable import HTMLLexer
 
-final class HTMLTokenCommentTests: XCTestCase {
+final class CommentTests: XCTestCase {
     func testCommentTag() throws {
         let parser = Comment()
         let text = "-- Foo -->".utf8

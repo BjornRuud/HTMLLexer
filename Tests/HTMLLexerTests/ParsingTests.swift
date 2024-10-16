@@ -1,7 +1,7 @@
 import XCTest
 @testable import HTMLLexer
 
-final class HTMLLexerParsingTests: XCTestCase {
+final class ParsingTests: XCTestCase {
     func testByteOrderMark() throws {
         let html = "\u{FEFF} asdf"
         let tokens = try HTMLLexer.parse(html: html)

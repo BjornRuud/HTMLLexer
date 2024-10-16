@@ -1,7 +1,7 @@
 import XCTest
 @testable import HTMLLexer
 
-final class HTMLTokenCDataTests: XCTestCase {
+final class CDataTests: XCTestCase {
     func testCDataTag() throws {
         let parser = CData()
         let text = "[CDATA[x<y]]>".utf8

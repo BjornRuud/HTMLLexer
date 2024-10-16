@@ -1,7 +1,7 @@
 import XCTest
 @testable import HTMLLexer
 
-final class HTMLTokenDoctypeTests: XCTestCase {
+final class DoctypeTests: XCTestCase {
     func testDoctype() throws {
         let parser = DocType()
         let text = "DOCTYPE html>".utf8
