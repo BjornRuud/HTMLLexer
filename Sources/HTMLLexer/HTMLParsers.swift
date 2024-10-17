@@ -3,6 +3,7 @@ import Parsing
 
 enum HTMLTagError: Error {
     case attributeNonQuotedValueMissingEndWhitespace
+    case attributeNameInvalidCharacter
 }
 
 /// [HTML optional byte order mark](https://html.spec.whatwg.org/multipage/syntax.html#writing)
@@ -159,10 +160,22 @@ struct TagAttributes: Parser {
 
 /// [HTML attribute name](https://html.spec.whatwg.org/multipage/syntax.html#syntax-attribute-name)
 struct TagAttributeName: Parser {
-    var body: some Parser<Substring.UTF8View, Substring.UTF8View> {
-        Prefix(1...) {
-            CharacterSet.htmlAttributeName.contains(Unicode.Scalar($0))
+    func parse(_ input: inout Substring.UTF8View) throws -> Substring.UTF8View {
+        // Attribute names can contain multibyte characters so temporarily use Substring.
+        let original = input
+        var inputSubstring = Substring(input)
+        while let first = inputSubstring.first {
+            if CharacterSet.htmlAttributeNameEnd.contains(first) {
+                break
+            }
+            guard CharacterSet.htmlAttributeName.contains(first) else {
+                input = inputSubstring.utf8
+                throw HTMLTagError.attributeNameInvalidCharacter
+            }
+            inputSubstring = inputSubstring.dropFirst()
         }
+        input = inputSubstring.utf8
+        return original[..<input.startIndex]
     }
 }
 

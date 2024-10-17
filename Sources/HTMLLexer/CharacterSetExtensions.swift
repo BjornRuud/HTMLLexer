@@ -80,6 +80,16 @@ extension CharacterSet {
         return charSet
     }()
 
+    /// Helper character set to determine end of attribute name.
+    static let htmlAttributeNameEnd: CharacterSet = {
+        var charSet = CharacterSet()
+        charSet.formUnion(asciiWhitespace)
+        charSet.insert(Unicode.Scalar(0x3E)) // >
+        charSet.insert(Unicode.Scalar(0x2F)) // /
+        charSet.insert(Unicode.Scalar(0x3D)) // =
+        return charSet
+    }()
+
     /// Non-quoted HTML attribute values have the same requirements as quoted attribute
     /// values, and must additionally not contain any literal ASCII whitespace, any
     /// `U+0022 QUOTATION MARK` characters ("), `U+0027 APOSTROPHE` characters ('),
