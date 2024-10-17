@@ -1,20 +1,20 @@
-import XCTest
+import Testing
 @testable import HTMLLexer
 
-final class ByteOrderMarkTests: XCTestCase {
-    func testByteOrderMark() throws {
+@Suite struct ByteOrderMarkTests {
+    @Test func byteOrderMark() throws {
         let parser = ByteOrderMark()
         let text = "\u{FEFF}".utf8
         var input = text[...]
-        XCTAssertNotNil(try parser.parse(&input))
-        XCTAssertEqual(input.count, 0)
+        #expect(try parser.parse(&input) != nil)
+        #expect(input.count == 0)
     }
 
-    func testByteOrderMarkLater() throws {
+    @Test func byteOrderMarkLater() throws {
         let parser = ByteOrderMark()
         let text = " \u{FEFF}".utf8
         var input = text[...]
-        XCTAssertNil(try parser.parse(&input))
-        XCTAssertEqual(input.count, 4) // U+FEFF is 3 bytes in UTF-8
+        #expect(try parser.parse(&input) == nil)
+        #expect(input.count == 4) // U+FEFF is 3 bytes in UTF-8
     }
 }

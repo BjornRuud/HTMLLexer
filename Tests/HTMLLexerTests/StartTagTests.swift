@@ -1,51 +1,51 @@
-import XCTest
+import Testing
 @testable import HTMLLexer
 
-final class StartTagTests: XCTestCase {
-    func testPlain() throws {
+@Suite struct StartTagTests {
+    @Test func plain() throws {
         let parser = StartTag()
         let text = "b>".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.tagStart(name: "b", attributes: [], isSelfClosing: false)
-        XCTAssertEqual(token, reference)
+        #expect(token == reference)
     }
 
-    func testPlainWithSpace() throws {
+    @Test func plainWithSpace() throws {
         let parser = StartTag()
         let text = "b >".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.tagStart(name: "b", attributes: [], isSelfClosing: false)
-        XCTAssertEqual(token, reference)
+        #expect(token == reference)
     }
 
-    func testPlainWithSelfClosing() throws {
+    @Test func plainWithSelfClosing() throws {
         let parser = StartTag()
         let text = "b/>".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.tagStart(name: "b", attributes: [], isSelfClosing: true)
-        XCTAssertEqual(token, reference)
+        #expect(token == reference)
     }
 
-    func testPlainWithSpaceAndSelfClosing() throws {
+    @Test func plainWithSpaceAndSelfClosing() throws {
         let parser = StartTag()
         let text = "b />".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.tagStart(name: "b", attributes: [], isSelfClosing: true)
-        XCTAssertEqual(token, reference)
+        #expect(token == reference)
     }
 
-    func testInvalidName() throws {
+    @Test func invalidName() throws {
         let parser = StartTag()
         let text = "@>".utf8
         var input = text[...]
-        XCTAssertThrowsError(try parser.parse(&input))
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
     }
 
-    func testAttributesSingle() throws {
+    @Test func attributesSingle() throws {
         let parser = StartTag()
         let text = "b foo1 = 'bar1'/>".utf8
         var input = text[...]
@@ -54,10 +54,10 @@ final class StartTagTests: XCTestCase {
             .init(name: "foo1", value: "bar1")
         ]
         let reference = HTMLToken.tagStart(name: "b", attributes: attributes, isSelfClosing: true)
-        XCTAssertEqual(token, reference)
+        #expect(token == reference)
     }
 
-    func testAttributes() throws {
+    @Test func attributes() throws {
         let parser = StartTag()
         let text = "b foo1=bar1 foo2='bar2' foo3 = \"bar3\" foo4 />".utf8
         var input = text[...]
@@ -69,6 +69,6 @@ final class StartTagTests: XCTestCase {
             .init(name: "foo4", value: nil)
         ]
         let reference = HTMLToken.tagStart(name: "b", attributes: attributes, isSelfClosing: true)
-        XCTAssertEqual(token, reference)
+        #expect(token == reference)
     }
 }

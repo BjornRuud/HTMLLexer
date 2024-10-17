@@ -1,41 +1,41 @@
-import XCTest
+import Testing
 @testable import HTMLLexer
 
-final class CommentTests: XCTestCase {
-    func testCommentTag() throws {
+@Suite struct CommentTests {
+    @Test func commentTag() throws {
         let parser = Comment()
         let text = "-- Foo -->".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.comment(" Foo ")
-        XCTAssertEqual(token, reference)
-        XCTAssertEqual(input.count, 0)
+        #expect(token == reference)
+        #expect(input.count == 0)
     }
 
-    func testCommentMalformed() throws {
+    @Test func commentMalformed() throws {
         let parser = Comment()
         let text = "- Foo".utf8
         var input = text[...]
         let textLength = text.count
-        XCTAssertThrowsError(try parser.parse(&input))
-        XCTAssertEqual(input.count, textLength)
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
+        #expect(input.count == textLength)
     }
 
-    func testCommentNoEnd() throws {
+    @Test func commentNoEnd() throws {
         let parser = Comment()
         let text = "-- Foo".utf8
         var input = text[...]
-        XCTAssertThrowsError(try parser.parse(&input))
-        XCTAssertEqual(input.count, 4)
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
+        #expect(input.count == 4)
     }
 
-    func testCommentDoubleEnd() throws {
+    @Test func commentDoubleEnd() throws {
         let parser = Comment()
         let text = "-- Foo -->-->".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.comment(" Foo ")
-        XCTAssertEqual(token, reference)
-        XCTAssertEqual(input.count, 3)
+        #expect(token == reference)
+        #expect(input.count == 3)
     }
 }

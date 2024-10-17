@@ -1,36 +1,36 @@
-import XCTest
+import Testing
 @testable import HTMLLexer
 
-final class EndTagTests: XCTestCase {
-    func testPlain() throws {
+@Suite struct EndTagTests {
+    @Test func plain() throws {
         let parser = EndTag()
         let text = "/b>".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.tagEnd(name: "b")
-        XCTAssertEqual(token, reference)
+        #expect(token == reference)
     }
 
-    func testPlainWithSpace() throws {
+    @Test func plainWithSpace() throws {
         let parser = EndTag()
         let text = "/b >".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.tagEnd(name: "b")
-        XCTAssertEqual(token, reference)
+        #expect(token == reference)
     }
 
-    func testInvalidName() throws {
+    @Test func invalidName() throws {
         let parser = EndTag()
         let text = "/@ >".utf8
         var input = text[...]
-        XCTAssertThrowsError(try parser.parse(&input))
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
     }
 
-    func testInvalidAttribute() throws {
+    @Test func invalidAttribute() throws {
         let parser = EndTag()
         let text = "/b foo='bar'>".utf8
         var input = text[...]
-        XCTAssertThrowsError(try parser.parse(&input))
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
     }
 }
