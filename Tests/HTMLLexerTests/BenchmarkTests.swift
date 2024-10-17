@@ -6,7 +6,7 @@ import Testing
 struct BenchmarkTests {
     let warmupCount = 1
 
-    let iterationCount = 9
+    let iterationCount = 10
 
     private var htmlString: String {
         let url = Bundle.module.url(forResource: "HTMLStandard", withExtension: "html")!
