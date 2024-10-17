@@ -46,6 +46,13 @@ import Testing
         return invalidChars
     }
 
+    @Test func empty() throws {
+        let parser = TagAttribute()
+        let text = "".utf8
+        var input = text[...]
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
+    }
+
     @Test func nameOnly() throws {
         let parser = TagAttribute()
         let text = "custom".utf8

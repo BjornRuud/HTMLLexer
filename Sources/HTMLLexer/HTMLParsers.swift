@@ -162,20 +162,17 @@ struct TagAttributes: Parser {
 struct TagAttributeName: Parser {
     func parse(_ input: inout Substring.UTF8View) throws -> Substring.UTF8View {
         // Attribute names can contain multibyte characters so temporarily use Substring.
-        let original = input
         var inputSubstring = Substring(input)
-        while let first = inputSubstring.first {
-            if CharacterSet.htmlAttributeNameEnd.contains(first) {
-                break
-            }
-            guard CharacterSet.htmlAttributeName.contains(first) else {
-                input = inputSubstring.utf8
-                throw HTMLTagError.attributeNameInvalidCharacter
-            }
-            inputSubstring = inputSubstring.dropFirst()
-        }
+
+        let name = try Prefix(1...) {
+            CharacterSet.htmlAttributeName.contains($0)
+        }.parse(&inputSubstring)
+
         input = inputSubstring.utf8
-        return original[..<input.startIndex]
+        if let next = inputSubstring.first, !CharacterSet.htmlAttributeNameEnd.contains(next) {
+            throw HTMLTagError.attributeNameInvalidCharacter
+        }
+        return name.utf8
     }
 }
 
