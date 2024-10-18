@@ -1,65 +1,83 @@
-import XCTest
+import Foundation
+import Testing
 @testable import HTMLLexer
 
-final class TagAttributeTests: XCTestCase {
-    func testTagAttributeSingle() throws {
+@Suite struct TagAttributeTests {
+    @Test func empty() throws {
+        let parser = TagAttribute()
+        let text = "".utf8
+        var input = text[...]
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
+    }
+
+    @Test func nameOnly() throws {
         let parser = TagAttribute()
         let text = "custom".utf8
         var input = text[...]
         let attribute = try parser.parse(&input)
-        XCTAssertEqual(attribute.name, "custom")
-        XCTAssertNil(attribute.value)
+        #expect(attribute.name == "custom")
+        #expect(attribute.value == nil)
     }
 
-    func testTagAttributeSingleQuote() throws {
+    @Test func singleQuoteValue() throws {
         let parser = TagAttribute()
         let text = "custom = 'foo'".utf8
         var input = text[...]
         let attribute = try parser.parse(&input)
-        XCTAssertEqual(attribute.name, "custom")
-        XCTAssertEqual(attribute.value, "foo")
+        #expect(attribute.name == "custom")
+        #expect(attribute.value == "foo")
     }
 
-    func testTagAttributeSingleQuoteNoEnd() throws {
+    @Test func singleQuoteValueNoEnd() throws {
         let parser = TagAttribute()
         let text = "custom = 'foo".utf8
         var input = text[...]
-        XCTAssertThrowsError(try parser.parse(&input))
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
     }
 
-    func testTagAttributeDoubleQuote() throws {
+    @Test func doubleQuoteValue() throws {
         let parser = TagAttribute()
         let text = "custom = \"foo\"".utf8
         var input = text[...]
         let attribute = try parser.parse(&input)
-        XCTAssertEqual(attribute.name, "custom")
-        XCTAssertEqual(attribute.value, "foo")
+        #expect(attribute.name == "custom")
+        #expect(attribute.value == "foo")
     }
 
-    func testTagAttributeDoubleQuoteNoEnd() throws {
+    @Test func doubleQuoteValueNoEnd() throws {
         let parser = TagAttribute()
         let text = "custom = \"foo".utf8
         var input = text[...]
-        XCTAssertThrowsError(try parser.parse(&input))
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
     }
 
-    func testTagAttributeEmpty() throws {
-        let parser = TagAttribute()
-        let text = "".utf8
-        var input = text[...]
-        XCTAssertThrowsError(try parser.parse(&input))
+    @Test("Valid unquoted values", arguments: [
+        ("foo", "foo"),
+        ("f/o", "f/o"),
+        ("f😀o", "f😀o"),
+        ("foo ", "foo"),
+        ("foo>", "foo"),
+        ("foo/>", "foo"),
+        ("foo//>", "foo/"),
+    ])
+    func unquotedValue(textAndRef: (String, String)) throws {
+        let (text, refValue) = textAndRef
+        let parser = TagAttributeNonQuotedValue()
+        var input = text.utf8[...]
+        let value = try parser.parse(&input)
+        #expect(String(value) == refValue)
     }
 
-    func testTagAttributeUnquoted() throws {
-        let parser = TagAttribute()
-        let text = "custom = foo".utf8
-        var input = text[...]
-        let attribute = try parser.parse(&input)
-        XCTAssertEqual(attribute.name, "custom")
-        XCTAssertEqual(attribute.value, "foo")
+    @Test("Invalid unquoted values", arguments: [
+        "",
+    ])
+    func unquotedValueInvalid(text: String) throws {
+        let parser = TagAttributeNonQuotedValue()
+        var input = text.utf8[...]
+        #expect(throws: (any Error).self) { try parser.parse(&input) }
     }
 
-    func testTagAttributes() throws {
+    @Test func multiple() throws {
         let parser = TagAttributes()
         let text = "foo1 = 'bar1' foo2='bar2' foo3 foo4=bar4".utf8
         var input = text[...]
@@ -70,6 +88,20 @@ final class TagAttributeTests: XCTestCase {
             .init(name: "foo3", value: nil),
             .init(name: "foo4", value: "bar4")
         ]
-        XCTAssertEqual(attributes, reference)
+        #expect(attributes == reference)
+    }
+
+    @Test("End of attribute name", arguments: [
+        ("foo anotherFoo", [HTMLToken.TagAttribute(name: "foo", value: nil), .init(name: "anotherFoo", value: nil)]),
+        ("foo>", [.init(name: "foo", value: nil)]),
+        ("foo/>", [.init(name: "foo", value: nil)]),
+        ("foo=bar>", [.init(name: "foo", value: "bar")]),
+    ])
+    func tagEnd(textAndRef: (String, [HTMLToken.TagAttribute])) throws {
+        let parser = TagAttributes()
+        let (text, refTokens) = textAndRef
+        var input = text.utf8[...]
+        let attributes = try parser.parse(&input)
+        #expect(attributes == refTokens)
     }
 }

@@ -1,4 +1,4 @@
-public enum HTMLToken: Equatable {
+public enum HTMLToken: Equatable, Sendable {
     case byteOrderMark
     case cdata(Substring)
     case comment(Substring)
@@ -9,7 +9,7 @@ public enum HTMLToken: Equatable {
 }
 
 extension HTMLToken {
-    public struct TagAttribute: Equatable {
+    public struct TagAttribute: Equatable, Sendable {
         public let name: Substring
         public let value: Substring?
 

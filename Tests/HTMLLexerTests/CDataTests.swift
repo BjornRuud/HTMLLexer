@@ -1,24 +1,24 @@
-import XCTest
+import Testing
 @testable import HTMLLexer
 
-final class CDataTests: XCTestCase {
-    func testCDataTag() throws {
+@Suite struct CDataTests {
+    @Test func cDataTag() throws {
         let parser = CData()
         let text = "[CDATA[x<y]]>".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.cdata("x<y")
-        XCTAssertEqual(token, reference)
-        XCTAssertEqual(input.count, 0)
+        #expect(token == reference)
+        #expect(input.count == 0)
     }
 
-    func testCDataTagWithWhitespace() throws {
+    @Test func cDataTagWithWhitespace() throws {
         let parser = CData()
         let text = "[CDATA[ x < y ]]>".utf8
         var input = text[...]
         let token = try parser.parse(&input)
         let reference = HTMLToken.cdata(" x < y ")
-        XCTAssertEqual(token, reference)
-        XCTAssertEqual(input.count, 0)
+        #expect(token == reference)
+        #expect(input.count == 0)
     }
 }

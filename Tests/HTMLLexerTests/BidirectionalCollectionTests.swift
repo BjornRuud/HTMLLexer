@@ -1,30 +1,31 @@
-import XCTest
+import Foundation
+import Testing
 @testable import HTMLLexer
 
-final class BidirectionalCollectionTests: XCTestCase {
-    func testDropLastWhereSubstring() {
+@Suite struct BidirectionalCollectionTests {
+    @Test func dropLastWhereSubstring() {
         let reference = "Hello, World!   "
         var trimmed = reference[...].dropLast {
             CharacterSet.asciiWhitespace.contains($0)
         }
-        XCTAssertEqual(trimmed, "Hello, World!")
+        #expect(trimmed == "Hello, World!")
 
         trimmed = trimmed.dropLast {
             CharacterSet.asciiWhitespace.contains($0)
         }
-        XCTAssertEqual(trimmed, "Hello, World!")
+        #expect(trimmed == "Hello, World!")
     }
 
-    func testDropLastWhereUTF8() {
+    @Test func dropLastWhereUTF8() {
         let reference = "Hello, World!   ".utf8
         var trimmed = reference[...].dropLast {
             CharacterSet.asciiWhitespace.contains(Unicode.Scalar($0))
         }
-        XCTAssertEqual(String(trimmed), "Hello, World!")
+        #expect(String(trimmed) == "Hello, World!")
 
         trimmed = trimmed.dropLast {
             CharacterSet.asciiWhitespace.contains(Unicode.Scalar($0))
         }
-        XCTAssertEqual(String(trimmed), "Hello, World!")
+        #expect(String(trimmed) == "Hello, World!")
     }
 }

@@ -2,7 +2,7 @@ import Foundation
 import Parsing
 
 enum HTMLTagError: Error {
-    case attributeNonQuotedValueMissingEndWhitespace
+    case attributeNonQuotedValueEmpty
 }
 
 /// [HTML optional byte order mark](https://html.spec.whatwg.org/multipage/syntax.html#writing)
@@ -161,7 +161,7 @@ struct TagAttributes: Parser {
 struct TagAttributeName: Parser {
     var body: some Parser<Substring.UTF8View, Substring.UTF8View> {
         Prefix(1...) {
-            CharacterSet.htmlAttributeName.contains(Unicode.Scalar($0))
+            !CharacterSet.htmlAttributeNameEnd.contains(Unicode.Scalar($0))
         }
     }
 }
@@ -190,13 +190,21 @@ struct TagAttributeValue: Parser {
 /// [HTML non-quoted attribute value](https://html.spec.whatwg.org/multipage/syntax.html#attributes-2)
 struct TagAttributeNonQuotedValue: Parser {
     func parse(_ input: inout Substring.UTF8View) throws -> Substring.UTF8View {
-        let value = try Prefix(1...) {
-            CharacterSet.htmlNonQuotedAttributeValue.contains(Unicode.Scalar($0))
-        }.parse(&input)
-        // Solidus `/` is allowed in non-quoted value so if tag is self-closing the value must be
-        // followed by whitespace.
+        let original = input
+        while let first = input.first {
+            if CharacterSet.htmlAttributeNonQuotedValueEnd.contains(Unicode.Scalar(first)) {
+                break
+            }
+            input = input.dropFirst()
+        }
+
+        var value = original[..<input.startIndex]
         if value.last == UInt8(ascii: "/"), input.first == UInt8(ascii: ">") {
-            throw HTMLTagError.attributeNonQuotedValueMissingEndWhitespace
+            value = value.dropLast()
+            input = original[value.endIndex...]
+        }
+        if value.isEmpty {
+            throw HTMLTagError.attributeNonQuotedValueEmpty
         }
         return value
     }
